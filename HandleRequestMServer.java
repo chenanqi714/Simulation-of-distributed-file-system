@@ -25,37 +25,7 @@ class HandleRequestMServer implements Runnable
       this.map = map;
       this.numOfServer = 3;
    }
-   
-   public void createFileUseJavaIO(String filePath)
-	{
-		try 
-		{
-			/* First check filePath variable value. */
-			if(filePath!=null && filePath.trim().length()>0)
-			{
-				File fileObj = new File(filePath);
-				
-				String absoluteFilePath = fileObj.getAbsolutePath();
-				System.out.println("NewFile location is " + absoluteFilePath);
-				
-				/* If not exist. */
-				if(!fileObj.exists())
-				{		
-					boolean result = fileObj.createNewFile();
-					
-					if(result)
-					{
-						System.out.println("File " + filePath + " create success. ");
-					}
-				}else
-				{
-					System.out.println("File exist. ");
-				}
-			}
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
-	}
+ 
 	
 
    public void run()
@@ -158,6 +128,9 @@ class HandleRequestMServer implements Runnable
 	            	break;
 	            case '5':
 	            	flag = false;
+	            	break;
+	            case 'H':
+	            	System.out.println("Get heart beat message from server");
 	            	break;
                 default:
             	    line = "Invalid option";

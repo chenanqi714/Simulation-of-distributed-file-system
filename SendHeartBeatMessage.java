@@ -51,7 +51,7 @@ public class SendHeartBeatMessage implements Runnable {
 		   boolean flag = true;
 		   long time = 5000;
 		   while(flag) {
-			   out.println("Heart Message");
+			   out.println("H");
 			   System.out.println("Send heart messasge");
 
 			   try {
