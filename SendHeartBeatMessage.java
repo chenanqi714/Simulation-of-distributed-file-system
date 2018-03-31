@@ -61,8 +61,10 @@ public class SendHeartBeatMessage implements Runnable {
 				   if(!list.isEmpty()) {
 					   ChunkNode node = list.get(list.size()-1);
 					   int chunkId = node.chunkId;
+					   int space = node.space;
 					   out.println(filename);
 					   out.println(String.valueOf(chunkId));
+					   out.println(String.valueOf(space));
 				   }
 			   }
 			   out.println("E");

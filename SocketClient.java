@@ -70,7 +70,7 @@ public class SocketClient
                   try
                   {
                      line = in.readLine();
-                     System.out.println("Text received: " + line);
+                     System.out.println("Current existing files: " + line);
                   } 
                   catch (IOException e)
                   {
@@ -102,6 +102,7 @@ public class SocketClient
             	  out.println(option);
             	  System.out.println("Enter the file name you want to write:");
             	  line = sc.nextLine();
+            	  String filename = line;
             	  //Send filename over socket
             	  out.println(line);
             	  //Receive text from server
@@ -111,10 +112,27 @@ public class SocketClient
                      if(line.equals("File exists")) {
                     	 System.out.println("Enter the text you want to write:");
                    	     line = sc.nextLine();
-                   	     out.println(line);
+                   	     String text = line;
+                   	     int bytes = line.getBytes("UTF-8").length;
+                   	     out.println(bytes);
+                   	     line = in.readLine();
+                   	     int serverId = Integer.parseInt(line);
+                   	     line = in.readLine();
+                   	     int chunkId = Integer.parseInt(line);
+                   	     System.out.println("Get serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
+                   	     
+                   	     this.listenSocket(hostname[serverId], port);
+                         out.println(option);
+                         out.println(filename);
+                         out.println(String.valueOf(chunkId));
+                         out.println(text);
+                         line = in.readLine();
+                         System.out.println(line);
+                         this.listenSocket(host, port);
                      }
                      else {
-                    	 System.out.println("Text received: " + line);
+                    	 //file does not exist
+                    	 System.out.println("line");
                      }
                   } 
                   catch (IOException e)

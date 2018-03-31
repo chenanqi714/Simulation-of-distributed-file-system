@@ -7,6 +7,7 @@ public class SocketServer {
 	
 	   ServerSocket server = null;
 	   HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
+	   MaxChunkId id = new MaxChunkId();
 
 	   public void listenSocket(int port, int serverId)
 	   {
@@ -35,7 +36,7 @@ public class SocketServer {
 	         HandleRequestServer w;
 	         try
 	         {
-	            w = new HandleRequestServer(server.accept(), map, serverId);
+	            w = new HandleRequestServer(server.accept(), map, serverId, id);
 	            Thread t = new Thread(w);
 	            t.start();
 	         }

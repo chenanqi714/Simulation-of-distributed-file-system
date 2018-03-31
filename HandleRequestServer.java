@@ -18,16 +18,27 @@ class HandleRequestServer implements Runnable
    private Socket client;
    HashMap<String, List<ChunkNode>> map;
    int numOfServer;
-   int maxChunkId;
+   MaxChunkId maxId;
    int serverId;
    
-   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId) 
+   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId, MaxChunkId id) 
    {
       this.client = client;
       this.map = map;
       this.numOfServer = 3;
-      this.maxChunkId = 0;
+      this.maxId = id;
       this.serverId = serverId;
+   }
+   
+   public void printMap() {
+	   for(String filename: map.keySet()) {
+		   List<ChunkNode> list = map.get(filename);
+		   System.out.print(filename+": ");
+		   for(ChunkNode n: list) {
+			   System.out.println("serverId "+n.serverId+" chunkId "+n.chunkId);
+			   System.out.println("MaxChunkId is "+maxId.id);
+		   }
+	   }
    }
    
    public void createFileUseJavaIO(String filePath)
@@ -82,7 +93,6 @@ class HandleRequestServer implements Runnable
       {
     	  
     	boolean flag = true;
-    	Random rand = new Random();
     	while(flag) {
     		// Receive text from client
 	        line = in.readLine();
@@ -96,14 +106,17 @@ class HandleRequestServer implements Runnable
 	            case '1':
 	            	line = in.readLine();
                     if(!map.containsKey(line)) {
-                    	createFileUseJavaIO("server"+serverId+"/"+line);
-                    	ChunkNode chunknode = new ChunkNode(maxChunkId, serverId);
+                    	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
+                    	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
                     	List<ChunkNode> list = new ArrayList<ChunkNode>();
                     	list.add(chunknode);
                     	map.put(line, list);
+                    	maxId.id++;
+                    	
                     	line = "New file has been created";
     		            System.out.println(line);
     		            out.println(line);	
+    		            printMap();
                     }
                     else {
                     	line = "File name already exists";
@@ -142,14 +155,42 @@ class HandleRequestServer implements Runnable
 	            	line = in.readLine();
 	            	filename = line;
 	            	if(map.containsKey(line)) {
-	            		line = "File exists";
-	            		out.println(line);	
 	            		line = in.readLine();
-	            		Writer output;
-	            		output = new BufferedWriter(new FileWriter(filename, true));  //clears file every time
-	            		output.append(line);
-	            		output.close();
-	            		System.out.println("Write to file "+filename+" succeed");
+	            		int chunkId = Integer.parseInt(line);
+	            		line = in.readLine();
+	            		if(chunkId != -1) {
+	            			Writer output;
+	            		    output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
+	            		    output.append(line);
+	            		    int bytes = line.getBytes("UTF-8").length;
+	            		    List<ChunkNode> list = map.get(filename);
+	            		    for(ChunkNode n : list) {
+	            		    	if(n.chunkId == chunkId) {
+	            		    		n.space = n.space - bytes;
+	            		    		break;
+	            		    	}
+	            		    }
+	            		    output.close();
+	            		}
+	            		else {
+	            			chunkId = maxId.id;
+	            			ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
+	                    	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
+	                    	List<ChunkNode> list = map.get(filename);
+	                    	list.add(chunknode);
+	                    	maxId.id++;
+	            			
+	            			
+	            			Writer output;
+	            		    output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
+	            		    output.append(line);
+	            		    int bytes = line.getBytes("UTF-8").length;
+	            		    chunknode.space = chunknode.space - bytes;	            		    
+	            		    output.close();
+	            		}
+	            		line = "Write to file "+filename+" succeed";
+	            		out.println(line);
+	            		System.out.println(line);
                     }
                     else {
                     	line = "File name does not exist";

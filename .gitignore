@@ -8,3 +8,5 @@
 /HandleRequestMServer.class
 /HandleRequestServer.class
 /SendHeartBeatMessage.class
+/SocketServer$MaxChunkId.class
+/MaxChunkId.class

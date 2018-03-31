@@ -25,7 +25,16 @@ class HandleRequestMServer implements Runnable
       this.map = map;
       this.numOfServer = 3;
    }
- 
+   
+   public void printMap() {
+	   for(String filename: map.keySet()) {
+		   List<ChunkNode> list = map.get(filename);
+		   System.out.print(filename+": ");
+		   for(ChunkNode n: list) {
+			   System.out.println("serverId "+n.serverId+" chunkId "+n.chunkId + " space "+n.space);
+		   }
+	   }
+   }
 	
 
    public void run()
@@ -70,7 +79,7 @@ class HandleRequestMServer implements Runnable
                     	list.add(chunknode);
                     	map.put(line, list);
                     	line = String.valueOf(serverId);
-    		            System.out.println(line);
+    		            //System.out.println(line);
     		            out.println(line);	
                     }
                     else {
@@ -83,7 +92,7 @@ class HandleRequestMServer implements Runnable
 	            case '2':
 	            	line = "";
 		            for(String filename: map.keySet()) {
-		            	line = line + filename + "\n";
+		            	line = line + filename + " ";
 		            }
 		            System.out.println(line);
 		            out.println(line);		 
@@ -112,12 +121,32 @@ class HandleRequestMServer implements Runnable
 	            	if(map.containsKey(line)) {
 	            		line = "File exists";
 	            		out.println(line);	
+	            		//read bytes
 	            		line = in.readLine();
-	            		Writer output;
-	            		output = new BufferedWriter(new FileWriter(filename, true));  //clears file every time
-	            		output.append(line);
-	            		output.close();
-	            		System.out.println("Write to file "+filename+" succeed");
+	            		int bytes = Integer.parseInt(line);
+	            		List<ChunkNode> list = map.get(filename);
+	            		if(!list.isEmpty()) {
+	            			ChunkNode lastChunk = list.get(list.size() - 1);
+	            			//wait until chunkId is updated by server
+	            			while(lastChunk.chunkId == -1) {
+	            				continue;
+	            			}
+	            			if(lastChunk.chunkId != -1) {
+	            				if(lastChunk.space >= bytes) {
+	            					out.println(String.valueOf(lastChunk.serverId));
+	            					out.println(String.valueOf(lastChunk.chunkId));
+	            				}
+	            				else {
+	            					
+	            					int serverId = 0;
+	                            	ChunkNode chunknode = new ChunkNode(-1, serverId);
+	                            	list.add(chunknode);
+	                            	
+	            					out.println(String.valueOf(serverId));
+	            					out.println(String.valueOf(-1));
+	            				}
+	            			}
+	            		}
                     }
                     else {
                     	line = "File name does not exist";
@@ -142,21 +171,25 @@ class HandleRequestMServer implements Runnable
 	            		}
 	            		else {
 	            			filename = line;
-	            			System.out.println("Get filename "+filename);
+	            			//System.out.println("Get filename "+filename);
 	            			line = in.readLine();
-	            			System.out.println("Get chunkId "+line);
+	            			//System.out.println("Get chunkId "+line);
 	            			int chunkId = Integer.parseInt(line);
+	            			line = in.readLine();
+	            			int space = Integer.parseInt(line);
 	            			List<ChunkNode> list = map.get(filename);
 	            			if(!list.isEmpty()) {
 	            				ChunkNode node = list.get(list.size()-1);
 	            				if(node.serverId == serverId) {
 	            					node.chunkId = chunkId;
-	            					System.out.println("Update chunkId "+chunkId);
+	            					node.space = space;
+	            					//System.out.println("Update chunkId "+chunkId);
 	            				}
 	            			}
 	            		}
 	            	}
-	            	System.out.println("End of heart message");
+	            	printMap();
+	            	System.out.println("End of heart beat message");
 	            	break;
                 default:
             	    line = "Invalid option";
