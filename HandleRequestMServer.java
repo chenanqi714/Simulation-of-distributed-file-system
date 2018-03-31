@@ -131,6 +131,32 @@ class HandleRequestMServer implements Runnable
 	            	break;
 	            case 'H':
 	            	System.out.println("Get heart beat message from server");
+	            	line = in.readLine();
+	            	int serverId = Integer.parseInt(line);
+	            	boolean end = false;
+	            	while(!end) {
+	            		line = in.readLine();
+	            		if(line.equals("E")) {
+	            			end = true;
+	            			continue;
+	            		}
+	            		else {
+	            			filename = line;
+	            			System.out.println("Get filename "+filename);
+	            			line = in.readLine();
+	            			System.out.println("Get chunkId "+line);
+	            			int chunkId = Integer.parseInt(line);
+	            			List<ChunkNode> list = map.get(filename);
+	            			if(!list.isEmpty()) {
+	            				ChunkNode node = list.get(list.size()-1);
+	            				if(node.serverId == serverId) {
+	            					node.chunkId = chunkId;
+	            					System.out.println("Update chunkId "+chunkId);
+	            				}
+	            			}
+	            		}
+	            	}
+	            	System.out.println("End of heart message");
 	            	break;
                 default:
             	    line = "Invalid option";

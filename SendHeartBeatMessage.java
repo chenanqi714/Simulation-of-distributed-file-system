@@ -12,16 +12,18 @@ public class SendHeartBeatMessage implements Runnable {
 	
 	   HashMap<String, List<ChunkNode>> map;
 	   int port;
+	   int serverId;
 	   String host;
 	   Socket socket = null;
 	   PrintWriter out = null;
 	   BufferedReader in = null;
 	   
-	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host) 
+	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host, int serverId) 
 	   {
 	      this.map = map;
 	      this.port = port;
 	      this.host = host;
+	      this.serverId = serverId;
 	   }
 	   
 	   public void listenSocket(String host, int port)
@@ -52,8 +54,18 @@ public class SendHeartBeatMessage implements Runnable {
 		   long time = 5000;
 		   while(flag) {
 			   out.println("H");
+			   out.println(serverId);
 			   System.out.println("Send heart messasge");
-
+			   for(String filename: map.keySet()) {
+				   List<ChunkNode> list = map.get(filename);
+				   if(!list.isEmpty()) {
+					   ChunkNode node = list.get(list.size()-1);
+					   int chunkId = node.chunkId;
+					   out.println(filename);
+					   out.println(String.valueOf(chunkId));
+				   }
+			   }
+			   out.println("E");
 			   try {
 				   Thread.sleep(time);
 			   } 

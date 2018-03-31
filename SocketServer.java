@@ -25,7 +25,7 @@ public class SocketServer {
 
 	      SendHeartBeatMessage h;
 		  String host = "csgrads1.utdallas.edu";
-		  h = new SendHeartBeatMessage(map, port, host);
+		  h = new SendHeartBeatMessage(map, port, host, serverId);
 		  Thread heart = new Thread(h);
 		  heart.start();
 
