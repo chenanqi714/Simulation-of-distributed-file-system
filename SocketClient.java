@@ -12,6 +12,7 @@ public class SocketClient
    Socket socket = null;
    PrintWriter out = null;
    BufferedReader in = null;
+   String[] hostname = new String[3];
    
    public void printMenu() {
 	   System.out.println("\nPlease select an option:\n"
@@ -22,7 +23,7 @@ public class SocketClient
 	   		+ "5. Exit\n");
    }
    
-   public void communicate()
+   public void communicate(String host, int port)
    {
       
 	  boolean flag = true;
@@ -45,8 +46,16 @@ public class SocketClient
             	  //Receive text from server
                   try
                   {
+                     String filename = line;
+                	 line = in.readLine();
+                     int serverId = Integer.parseInt(line);
+                     System.out.println("ServerId is: " + serverId);
+                     this.listenSocket(hostname[serverId], port);
+                     out.println(option);
+                     out.println(filename);
                      line = in.readLine();
-                     System.out.println("Text received: " + line);
+                     System.out.println(line);
+                     this.listenSocket(host, port);
                   } 
                   catch (IOException e)
                   {
@@ -153,10 +162,13 @@ public class SocketClient
       }
 
       SocketClient client = new SocketClient();
+      client.hostname[0] = "dc01.utdallas.edu";
+      client.hostname[1] = "dc02.utdallas.edu";
+      client.hostname[2] = "dc03.utdallas.edu";
 
       String host = args[0];
       int port = Integer.valueOf(args[1]);
       client.listenSocket(host, port);
-      client.communicate();
+      client.communicate(host, port);
    }
 }

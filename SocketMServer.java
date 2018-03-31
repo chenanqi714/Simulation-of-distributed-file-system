@@ -6,12 +6,13 @@
 
 import java.io.*;
 import java.net.*;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 
-class SocketThrdServer 
+class SocketMServer 
 {
    ServerSocket server = null;
-   HashSet<String> filenames = new HashSet<String>();
+   HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
 
    public void listenSocket(int port)
    {
@@ -28,17 +29,18 @@ class SocketThrdServer
       }
       while(true)
       {
-         ClientWorker w;
+    	  HandleRequestMServer w;
          try
          {
-            w = new ClientWorker(server.accept(), filenames);
+            w = new HandleRequestMServer(server.accept(), map);
             Thread t = new Thread(w);
             t.start();
-	 } 
-	 catch (IOException e) 
-	 {
-	    System.out.println("Accept failed");
-	    System.exit(-1);
+         }
+	 
+	     catch (IOException e) 
+	     {
+	       System.out.println("Accept failed");
+	       System.exit(-1);
          }
       }
    }
@@ -60,11 +62,11 @@ class SocketThrdServer
    {
       if (args.length != 1)
       {
-         System.out.println("Usage: java SocketThrdServer port");
+         System.out.println("Usage: java SocketMServer port");
 	 System.exit(1);
       }
 
-      SocketThrdServer server = new SocketThrdServer();
+      SocketMServer server = new SocketMServer();
       int port = Integer.valueOf(args[0]);
       server.listenSocket(port);
    }

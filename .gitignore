@@ -1,3 +1,10 @@
 /ClientWorker.class
 /SocketClient.class
 /SocketThrdServer.class
+/ChunkNode.class
+/chunkList.class
+/SocketMServer.class
+/SocketServer.class
+/HandleRequestMServer.class
+/HandleRequestServer.class
+/SendHeartBeatMessage.class

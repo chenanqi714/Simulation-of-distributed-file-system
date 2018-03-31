@@ -8,17 +8,22 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.Socket;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
-class ClientWorker implements Runnable 
+class HandleRequestMServer implements Runnable 
 {
    private Socket client;
-   HashSet<String> filenames;
+   HashMap<String, List<ChunkNode>> map;
+   int numOfServer;
    
-   ClientWorker(Socket client, HashSet<String> filenames) 
+   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map) 
    {
       this.client = client;
-      this.filenames = filenames;
+      this.map = map;
+      this.numOfServer = 3;
    }
    
    public void createFileUseJavaIO(String filePath)
@@ -73,6 +78,7 @@ class ClientWorker implements Runnable
       {
     	  
     	boolean flag = true;
+    	Random rand = new Random();
     	while(flag) {
     		// Receive text from client
 	        line = in.readLine();
@@ -85,10 +91,15 @@ class ClientWorker implements Runnable
 	        switch(option) {
 	            case '1':
 	            	line = in.readLine();
-                    if(!filenames.contains(line)) {
-                    	createFileUseJavaIO(line);
-                    	filenames.add(line);
-                    	line = "New file has been created";
+                    if(!map.containsKey(line)) {
+                    	//createFileUseJavaIO(line);
+                    	//int serverId = rand.nextInt(numOfServer);
+                    	int serverId = 0;
+                    	ChunkNode chunknode = new ChunkNode(-1, serverId);
+                    	List<ChunkNode> list = new ArrayList<ChunkNode>();
+                    	list.add(chunknode);
+                    	map.put(line, list);
+                    	line = String.valueOf(serverId);
     		            System.out.println(line);
     		            out.println(line);	
                     }
@@ -101,8 +112,8 @@ class ClientWorker implements Runnable
 		            break;
 	            case '2':
 	            	line = "";
-		            for(String filename: filenames) {
-		            	line = line + filename + " ";
+		            for(String filename: map.keySet()) {
+		            	line = line + filename + "\n";
 		            }
 		            System.out.println(line);
 		            out.println(line);		 
@@ -111,7 +122,7 @@ class ClientWorker implements Runnable
 	            	line = in.readLine();
 	            	String filename = line;
 	            	String content = "";
-	            	if(filenames.contains(line)) {
+	            	if(map.containsKey(line)) {
 	            		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
 	            		    while ((line = br.readLine()) != null) {
 	            		       content += line;
@@ -128,7 +139,7 @@ class ClientWorker implements Runnable
 	            case '4':
 	            	line = in.readLine();
 	            	filename = line;
-	            	if(filenames.contains(line)) {
+	            	if(map.containsKey(line)) {
 	            		line = "File exists";
 	            		out.println(line);	
 	            		line = in.readLine();
