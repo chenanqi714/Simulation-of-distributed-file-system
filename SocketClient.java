@@ -4,6 +4,8 @@
 // 11/07/07
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.net.*;
 
@@ -48,14 +50,21 @@ public class SocketClient
                   {
                      String filename = line;
                 	 line = in.readLine();
-                     int serverId = Integer.parseInt(line);
-                     System.out.println("ServerId is: " + serverId);
-                     this.listenSocket(hostname[serverId], port);
-                     out.println(option);
-                     out.println(filename);
-                     line = in.readLine();
-                     System.out.println(line);
-                     this.listenSocket(host, port);
+                	 if(!line.equals("File exists")) {
+                		 int serverId = Integer.parseInt(line);
+                         System.out.println("ServerId is: " + serverId);
+                         this.listenSocket(hostname[serverId], port);
+                         out.println(option);
+                         out.println(filename);
+                         line = in.readLine();
+                         System.out.println(line);
+                         this.listenSocket(host, port);
+                	 }
+                	 else {
+                		//file already exist
+                    	 System.out.println(line);
+                	 }
+                     
                   } 
                   catch (IOException e)
                   {
@@ -83,13 +92,40 @@ public class SocketClient
             	  out.println(option);
             	  System.out.println("Enter the file name you want to read:");
             	  line = sc.nextLine();
+            	  String filename = line;
             	  //Send filename over socket
             	  out.println(line);
             	  //Receive text from server
                   try
                   {
                      line = in.readLine();
-                     System.out.println("Text received: " + line);
+                     if(line.equals("File exists")) {
+                    	 boolean end = false;
+                    	 List<ChunkNode> list = new ArrayList<ChunkNode>();
+                    	 while(!end) {
+                    		line = in.readLine();
+     	            		if(line.equals("E")) {
+     	            			end = true;
+     	            			continue;
+     	            		}
+     	            		else {
+     	            			int chunkId = Integer.parseInt(line);
+     	            			line = in.readLine();
+     	            			int serverId = Integer.parseInt(line);
+     	            			ChunkNode n = new ChunkNode(chunkId, serverId);
+     	            			list.add(n);
+     	            		}
+                    	 }
+                    	 
+                    	 for(ChunkNode n: list) {
+                    		 System.out.println("chunkId "+n.chunkId + " serverId "+n.serverId);
+                    	 }
+                    	 
+                     }
+                     else {
+                    	 //file does not exist
+                    	 System.out.println(line);
+                     }
                   } 
                   catch (IOException e)
                   {
@@ -102,7 +138,7 @@ public class SocketClient
             	  out.println(option);
             	  System.out.println("Enter the file name you want to write:");
             	  line = sc.nextLine();
-            	  String filename = line;
+            	  filename = line;
             	  //Send filename over socket
             	  out.println(line);
             	  //Receive text from server
@@ -132,7 +168,7 @@ public class SocketClient
                      }
                      else {
                     	 //file does not exist
-                    	 System.out.println("line");
+                    	 System.out.println(line);
                      }
                   } 
                   catch (IOException e)

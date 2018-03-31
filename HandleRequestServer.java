@@ -33,10 +33,10 @@ class HandleRequestServer implements Runnable
    public void printMap() {
 	   for(String filename: map.keySet()) {
 		   List<ChunkNode> list = map.get(filename);
-		   System.out.print(filename+": ");
+		   System.out.print(filename+": \n");
 		   for(ChunkNode n: list) {
-			   System.out.println("serverId "+n.serverId+" chunkId "+n.chunkId);
-			   System.out.println("MaxChunkId is "+maxId.id);
+			   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space);
+			   //System.out.println("MaxChunkId is "+maxId.id);
 		   }
 	   }
    }
@@ -116,7 +116,6 @@ class HandleRequestServer implements Runnable
                     	line = "New file has been created";
     		            System.out.println(line);
     		            out.println(line);	
-    		            printMap();
                     }
                     else {
                     	line = "File name already exists";
@@ -207,6 +206,7 @@ class HandleRequestServer implements Runnable
             	    out.println(line);	
     	            break;
 	        }
+	        printMap();
     	}	    
       } 
       catch (IOException e) 

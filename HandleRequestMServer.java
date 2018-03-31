@@ -29,9 +29,9 @@ class HandleRequestMServer implements Runnable
    public void printMap() {
 	   for(String filename: map.keySet()) {
 		   List<ChunkNode> list = map.get(filename);
-		   System.out.print(filename+": ");
+		   System.out.print(filename+": \n");
 		   for(ChunkNode n: list) {
-			   System.out.println("serverId "+n.serverId+" chunkId "+n.chunkId + " space "+n.space);
+			   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space);
 		   }
 	   }
    }
@@ -83,7 +83,7 @@ class HandleRequestMServer implements Runnable
     		            out.println(line);	
                     }
                     else {
-                    	line = "File name already exists";
+                    	line = "File exists";
 		                System.out.println(line);
 		                out.println(line);	
                     }
@@ -100,14 +100,31 @@ class HandleRequestMServer implements Runnable
 	            case '3':
 	            	line = in.readLine();
 	            	String filename = line;
-	            	String content = "";
 	            	if(map.containsKey(line)) {
+	            		line = "File exists";
+	            		out.println(line);
+	            		List<ChunkNode> list = map.get(filename);
+	            		if(!list.isEmpty()) {
+	            			ChunkNode lastChunk = list.get(list.size() - 1);
+	            			//wait until chunkId is updated by server
+	            			while(lastChunk.chunkId == -1) {
+	            				continue;
+	            			}
+	            			if(lastChunk.chunkId != -1) {
+	            				for(ChunkNode n: list) {
+	            					out.println(n.chunkId);
+	            					out.println(n.serverId);
+	            				}
+	            				out.println("E");
+	            			}
+	            		}
+	            		/*
 	            		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
 	            		    while ((line = br.readLine()) != null) {
 	            		       content += line;
 	            		    }
 	            		}
-	            		out.println(content);	
+	            		*/
                     }
                     else {
                     	line = "File name does not exist";
