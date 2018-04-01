@@ -10,3 +10,5 @@
 /SendHeartBeatMessage.class
 /SocketServer$MaxChunkId.class
 /MaxChunkId.class
+/ServerStatus.class
+/ShutdownServer.class

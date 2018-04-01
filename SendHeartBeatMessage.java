@@ -19,14 +19,17 @@ public class SendHeartBeatMessage implements Runnable {
 	   PrintWriter out = null;
 	   BufferedReader in = null;
 	   Semaphore sem;
+	   ServerStatus status;
+	   Semaphore sem_status;
 	   
-	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host, int serverId, Semaphore sem) 
+	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host, int serverId, Semaphore sem, ServerStatus status) 
 	   {
 	      this.map = map;
 	      this.port = port;
 	      this.host = host;
 	      this.serverId = serverId;
 	      this.sem = sem;
+	      this.status = status;
 	   }
 	   
 	   public void listenSocket(String host, int port)
@@ -56,35 +59,50 @@ public class SendHeartBeatMessage implements Runnable {
 		   boolean flag = true;
 		   long time = 5000;
 		   while(flag) {
-			   listenSocket(host, port);
-			   out.println("H");
-			   out.println(serverId);
-			   System.out.println("Send heart beat messasge");
 			   
-			   try {
-				   sem.acquire();
-			   } catch (InterruptedException e1) {
-				e1.printStackTrace();
-			   }
-			   for(String filename: map.keySet()) {
-				   List<ChunkNode> list = map.get(filename);
-				   if(!list.isEmpty()) {
-					   ChunkNode node = list.get(list.size()-1);
-					   int chunkId = node.chunkId;
-					   int space = node.space;
-					   out.println(filename);
-					   out.println(String.valueOf(chunkId));
-					   out.println(String.valueOf(space));
+			   if(!status.down) {
+				   listenSocket(host, port);
+				   out.println("H");
+				   out.println(serverId);
+				   System.out.println("Send heart beat messasge");
+				   
+				   try {
+					   sem.acquire();
+				   } catch (InterruptedException e1) {
+					e1.printStackTrace();
 				   }
+				   for(String filename: map.keySet()) {
+					   List<ChunkNode> list = map.get(filename);
+					   if(!list.isEmpty()) {
+						   ChunkNode node = list.get(list.size()-1);
+						   int chunkId = node.chunkId;
+						   int space = node.space;
+						   out.println(filename);
+						   out.println(String.valueOf(chunkId));
+						   out.println(String.valueOf(space));
+					   }
+				   }
+				   sem.release();
+				   out.println("E");
+				   try {
+					   Thread.sleep(time);
+				   } 
+				    catch (InterruptedException e) {
+					   e.printStackTrace();
+				   }	
+				   
+				   
 			   }
-			   sem.release();
-			   out.println("E");
-			   try {
-				   Thread.sleep(time);
-			   } 
-			    catch (InterruptedException e) {
-				   e.printStackTrace();
-			   }	
+			   else {
+				   try {
+					   System.out.println("Server is down");
+					   Thread.sleep(time);
+				   } 
+				    catch (InterruptedException e) {
+					   e.printStackTrace();
+				   }	
+			   }
+			   
 		   }		      
 	   }
 

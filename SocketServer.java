@@ -12,6 +12,7 @@ public class SocketServer {
 	   MaxChunkId id = new MaxChunkId();
 	   Semaphore sem = new Semaphore(1);
 	   List<Semaphore> sem_files = new ArrayList<Semaphore>();
+	   ServerStatus status = new ServerStatus(false);
 
 	   public void listenSocket(String hostname, int Mport, int port, int serverId)
 	   {
@@ -29,10 +30,14 @@ public class SocketServer {
 	      
 
 	      SendHeartBeatMessage h;
-		  h = new SendHeartBeatMessage(map, Mport, hostname, serverId, sem);
+		  h = new SendHeartBeatMessage(map, Mport, hostname, serverId, sem, status);
 		  Thread heart = new Thread(h);
 		  heart.start();
-
+          
+		  ShutdownServer s;
+		  s = new ShutdownServer(status);
+		  Thread shutDown = new Thread(s);
+		  shutDown.start();
 	      
 	      while(true)
 	      {

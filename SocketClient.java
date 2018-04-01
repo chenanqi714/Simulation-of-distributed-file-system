@@ -51,7 +51,7 @@ public class SocketClient
                   {
                      String filename = line;
                 	 line = in.readLine();
-                	 if(!line.equals("File exists")) {
+                	 if(!line.equals("File exists") && !line.equals("Server is down")) {
                 		 int serverId = Integer.parseInt(line);
                          System.out.println("ServerId is: " + serverId);
                          
@@ -63,7 +63,7 @@ public class SocketClient
                          //this.listenSocket(host, port);
                 	 }
                 	 else {
-                		//file already exist
+                		//file already exist or server is down
                     	 System.out.println(line);
                 	 }
                      
@@ -131,7 +131,7 @@ public class SocketClient
                     	 
                      }
                      else {
-                    	 //file does not exist
+                    	 //file does not exist or server is down
                     	 System.out.println(line);
                      }
                   } 
@@ -176,7 +176,7 @@ public class SocketClient
                              line = in.readLine();
                              System.out.println(line);
                    	     }
-                   	     else {
+                   	     else if(line.equals("Not enough space")) {
                    	    	 line = in.readLine();
                   	         int serverId = Integer.parseInt(line);
                   	         line = in.readLine();
@@ -204,6 +204,10 @@ public class SocketClient
                              System.out.println(line);
                    	     
                    	     
+                   	     }
+                   	     else {
+                   	         //server is down
+                        	 System.out.println(line);
                    	     }
                    	     
                    	                      	     

@@ -82,22 +82,36 @@ class HandleRequestMServer implements Runnable
 	            	line = in.readLine();
                     if(!map.containsKey(line)) {
                     	int serverId = rand.nextInt(numOfServer);
-                    	ChunkNode chunknode = new ChunkNode(-1, serverId);
-                    	List<ChunkNode> list = new ArrayList<ChunkNode>();
-                    	list.add(chunknode);
+                    	
+                    	try {
+    					    sem_time[serverId].acquire();
+    				    } catch (InterruptedException e1) {
+    					    e1.printStackTrace();
+    				    }
+    	            	long interval = System.currentTimeMillis() - times[serverId];
+    				    sem_time[serverId].release();
+    				    if(interval > 15000) {
+    				    	line = "Server is down";
+    				    	System.out.println(line);
+    		                out.println(line);
+    				    }
+    				    else {
+    				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
+                        	List<ChunkNode> list = new ArrayList<ChunkNode>();
+                        	list.add(chunknode);
 
-					    try {
-							sem.acquire();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-		
-                    	map.put(line, list);
-                    	sem.release();
-                    	line = String.valueOf(serverId);
-    		            //System.out.println(line);
-    		            out.println(line);	
-    		            
+    					    try {
+    							sem.acquire();
+    						} catch (InterruptedException e) {
+    							e.printStackTrace();
+    						}
+    		
+                        	map.put(line, list);
+                        	sem.release();
+                        	line = String.valueOf(serverId);
+        		            //System.out.println(line);
+        		            out.println(line);    				    	
+    				    }
                     }
                     else {
                     	line = "File exists";
@@ -133,7 +147,7 @@ class HandleRequestMServer implements Runnable
 					}
 	            	if(map.containsKey(line)) {
 	            		line = "File exists";
-	            		out.println(line);
+	            		//out.println(line);
 	            		List<ChunkNode> list = map.get(filename);
 	            		if(!list.isEmpty()) {
 	            			ChunkNode lastChunk = list.get(list.size() - 1);
@@ -143,10 +157,29 @@ class HandleRequestMServer implements Runnable
 	            			}
 	            			if(lastChunk.chunkId != -1) {
 	            				for(ChunkNode n: list) {
-	            					out.println(n.chunkId);
-	            					out.println(n.serverId);
+	            					try {
+	            					    sem_time[n.serverId].acquire();
+	            				    } catch (InterruptedException e1) {
+	            					    e1.printStackTrace();
+	            				    }
+	            	            	long interval = System.currentTimeMillis() - times[n.serverId];
+	            				    sem_time[n.serverId].release();
+	            				    if(interval > 15000) {
+	            				    	line = "Server is down";
+	                                    break;
+	            				    }
 	            				}
-	            				out.println("E");
+	            				
+	            				out.println(line);
+	            				
+	            				if(line.equals("File exists")){
+	            					for(ChunkNode n: list) {
+		            					out.println(n.chunkId);
+		            					out.println(n.serverId);
+		            				}
+		            				out.println("E");
+	            				}
+	            				
 	            			}
 	            		}
 	            		
@@ -182,24 +215,55 @@ class HandleRequestMServer implements Runnable
 	            				continue;
 	            			}
 	            			if(lastChunk.chunkId != -1) {
-	            				if(lastChunk.space >= bytes) {
-	            					out.println("Enough space");
-	            					out.println(String.valueOf(lastChunk.serverId));
-	            					out.println(String.valueOf(lastChunk.chunkId));
-	            				}
-	            				else {
-	            					out.println("Not enough space");
-	            					out.println(String.valueOf(lastChunk.serverId));
-	            					out.println(String.valueOf(lastChunk.chunkId));
-	            					lastChunk.space = 0;
-	            					
-	            					int serverId = rand.nextInt(numOfServer);
-	                            	ChunkNode chunknode = new ChunkNode(-1, serverId);
-	                            	list.add(chunknode);
-	                            	
-	            					out.println(String.valueOf(serverId));
-	            					out.println(String.valueOf(-1));
-	            				}
+	            				
+	            				try {
+            					    sem_time[lastChunk.serverId].acquire();
+            				    } catch (InterruptedException e1) {
+            					    e1.printStackTrace();
+            				    }
+            	            	long interval = System.currentTimeMillis() - times[lastChunk.serverId];
+            				    sem_time[lastChunk.serverId].release();
+            				    if(interval > 15000) {
+            				    	out.println("Server is down");
+            				    }
+            				    else {
+            				    	if(lastChunk.space >= bytes) {
+    	            					out.println("Enough space");
+    	            					out.println(String.valueOf(lastChunk.serverId));
+    	            					out.println(String.valueOf(lastChunk.chunkId));
+    	            				}
+    	            				else {   	            					
+    	            					lastChunk.space = 0;   	            					
+    	            					int serverId = rand.nextInt(numOfServer);
+    	            					
+    	            					try {
+    	            					    sem_time[serverId].acquire();
+    	            				    } catch (InterruptedException e1) {
+    	            					    e1.printStackTrace();
+    	            				    }
+    	            	            	interval = System.currentTimeMillis() - times[serverId];
+    	            				    sem_time[serverId].release();
+    	            				    if(interval > 15000) {
+    	            				    	out.println("Server is down");
+    	            				    }
+    	            				    else {
+    	            				    	out.println("Not enough space");
+        	            					out.println(String.valueOf(lastChunk.serverId));
+        	            					out.println(String.valueOf(lastChunk.chunkId));
+    	            				    	         				    	
+    	            				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
+        	                            	list.add(chunknode);
+        	                            	
+        	            					out.println(String.valueOf(serverId));
+        	            					out.println(String.valueOf(-1));
+    	            				    }
+    	            					
+    	                            	
+    	            				}
+            				    	
+            				    }
+	            				
+	            				
 	            			}
 	            		}
                     }
