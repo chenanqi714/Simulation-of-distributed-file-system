@@ -20,13 +20,20 @@ class HandleRequestMServer implements Runnable
    HashMap<String, List<ChunkNode>> map;
    int numOfServer;
    Semaphore sem;
+   long[] times;
+   Semaphore[] sem_time;
    
-   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem) 
+   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem, int numOfServer, long[] times, Semaphore[] sem_time) 
    {
       this.client = client;
       this.map = map;
-      this.numOfServer = 3;
+      this.numOfServer = numOfServer;
       this.sem = sem;
+      this.times = times;
+      this.sem_time = sem_time;
+      for(int i = 0; i < sem_time.length; ++i) {
+    	  sem_time[i] = new Semaphore(1);
+      }
    }
    
    public void printMap() {
@@ -204,9 +211,9 @@ class HandleRequestMServer implements Runnable
 	            	sem.release();
 	            	break;
 	            case 'H':
-	            	System.out.println("Get heart beat message from server");
 	            	line = in.readLine();
 	            	int serverId = Integer.parseInt(line);
+	            	System.out.println("Get heart beat message from server"+serverId);
 	            	boolean end = false;
 	            	while(!end) {
 	            		line = in.readLine();
@@ -241,6 +248,16 @@ class HandleRequestMServer implements Runnable
 	            			sem.release();
 	            		}
 	            	}
+	            	
+				    try {
+					    sem_time[serverId].acquire();
+				    } catch (InterruptedException e1) {
+					    e1.printStackTrace();
+				    }
+	            	times[serverId] = System.currentTimeMillis();
+	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
+				    sem_time[serverId].release();
+				    
 	            	try {
 						sem.acquire();
 					} catch (InterruptedException e) {
@@ -254,8 +271,7 @@ class HandleRequestMServer implements Runnable
             	    line = "Invalid option";
             	    out.println(line);	
     	            break;
-	        }
-    	//}	    
+	        }  
       } 
       catch (IOException e) 
       {

@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.*;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
 import java.util.concurrent.Semaphore;
 
 class SocketMServer 
@@ -15,7 +16,11 @@ class SocketMServer
    ServerSocket server = null;
    HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
    Semaphore sem = new Semaphore(1);
-
+   int numOfServer = 3;
+   long[] times = new long[numOfServer];
+   Semaphore[] sem_time = new Semaphore[numOfServer];
+   
+   
    public void listenSocket(int port)
    {
       try
@@ -34,7 +39,7 @@ class SocketMServer
     	  HandleRequestMServer w;
          try
          {
-            w = new HandleRequestMServer(server.accept(), map, sem);
+            w = new HandleRequestMServer(server.accept(), map, sem, numOfServer, times, sem_time);
             Thread t = new Thread(w);
             t.start();
          }

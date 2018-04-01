@@ -266,7 +266,6 @@ public class SocketClient
       String host = args[0];
       int Mport = Integer.valueOf(args[1]);
       int port = Integer.valueOf(args[2]);
-      //client.listenSocket(host, port);
       client.communicate(host, Mport, port);
    }
 }
