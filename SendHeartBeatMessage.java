@@ -49,10 +49,11 @@ public class SendHeartBeatMessage implements Runnable {
 	   
 	   public void run()
 	   {
-		   listenSocket(host, port);
+		   //listenSocket(host, port);
 		   boolean flag = true;
 		   long time = 5000;
 		   while(flag) {
+			   listenSocket(host, port);
 			   out.println("H");
 			   out.println(serverId);
 			   System.out.println("Send heart messasge");

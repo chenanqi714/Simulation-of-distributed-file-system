@@ -37,6 +37,7 @@ public class SocketClient
         	  continue;
           }
           char option = line.charAt(0);
+          this.listenSocket(host, port);
           switch(option) {
               case '1':
             	  //Send create new file option over socket
@@ -53,12 +54,13 @@ public class SocketClient
                 	 if(!line.equals("File exists")) {
                 		 int serverId = Integer.parseInt(line);
                          System.out.println("ServerId is: " + serverId);
+                         
                          this.listenSocket(hostname[serverId], port);
                          out.println(option);
                          out.println(filename);
                          line = in.readLine();
                          System.out.println(line);
-                         this.listenSocket(host, port);
+                         //this.listenSocket(host, port);
                 	 }
                 	 else {
                 		//file already exist
@@ -118,8 +120,15 @@ public class SocketClient
                     	 }
                     	 
                     	 for(ChunkNode n: list) {
-                    		 System.out.println("chunkId "+n.chunkId + " serverId "+n.serverId);
+                    		 this.listenSocket(hostname[n.serverId], port);
+                    		 out.println(option);
+                    		 out.println(String.valueOf(n.chunkId));
+                    		 line = in.readLine();
+                    		 
+                    		 System.out.println("Read from server"+n.serverId+ " chunkfile"+n.chunkId);
+                    		 System.out.println(line);
                     	 }
+                    	 //this.listenSocket(host, port);
                     	 
                      }
                      else {
@@ -164,7 +173,7 @@ public class SocketClient
                          out.println(text);
                          line = in.readLine();
                          System.out.println(line);
-                         this.listenSocket(host, port);
+                         //this.listenSocket(host, port);
                      }
                      else {
                     	 //file does not exist
@@ -222,7 +231,7 @@ public class SocketClient
 
       String host = args[0];
       int port = Integer.valueOf(args[1]);
-      client.listenSocket(host, port);
+      //client.listenSocket(host, port);
       client.communicate(host, port);
    }
 }

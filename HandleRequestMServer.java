@@ -56,9 +56,9 @@ class HandleRequestMServer implements Runnable
       try 
       {
     	  
-    	boolean flag = true;
+    	//boolean flag = true;
     	Random rand = new Random();
-    	while(flag) {
+    	//while(flag) {
     		// Receive text from client
 	        line = in.readLine();
 	        if(line.isEmpty()) {
@@ -73,7 +73,7 @@ class HandleRequestMServer implements Runnable
                     if(!map.containsKey(line)) {
                     	//createFileUseJavaIO(line);
                     	//int serverId = rand.nextInt(numOfServer);
-                    	int serverId = 0;
+                    	int serverId = rand.nextInt(numOfServer);
                     	ChunkNode chunknode = new ChunkNode(-1, serverId);
                     	List<ChunkNode> list = new ArrayList<ChunkNode>();
                     	list.add(chunknode);
@@ -81,6 +81,7 @@ class HandleRequestMServer implements Runnable
                     	line = String.valueOf(serverId);
     		            //System.out.println(line);
     		            out.println(line);	
+    		            
                     }
                     else {
                     	line = "File exists";
@@ -118,13 +119,7 @@ class HandleRequestMServer implements Runnable
 	            				out.println("E");
 	            			}
 	            		}
-	            		/*
-	            		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-	            		    while ((line = br.readLine()) != null) {
-	            		       content += line;
-	            		    }
-	            		}
-	            		*/
+	            		
                     }
                     else {
                     	line = "File name does not exist";
@@ -155,7 +150,7 @@ class HandleRequestMServer implements Runnable
 	            				}
 	            				else {
 	            					
-	            					int serverId = 0;
+	            					int serverId = rand.nextInt(numOfServer);
 	                            	ChunkNode chunknode = new ChunkNode(-1, serverId);
 	                            	list.add(chunknode);
 	                            	
@@ -172,9 +167,9 @@ class HandleRequestMServer implements Runnable
                     }
 	            	
 	            	break;
-	            case '5':
-	            	flag = false;
-	            	break;
+	            //case '5':
+	            	//flag = false;
+	            	//break;
 	            case 'H':
 	            	System.out.println("Get heart beat message from server");
 	            	line = in.readLine();
@@ -213,7 +208,7 @@ class HandleRequestMServer implements Runnable
             	    out.println(line);	
     	            break;
 	        }
-    	}	    
+    	//}	    
       } 
       catch (IOException e) 
       {

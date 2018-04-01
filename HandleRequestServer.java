@@ -92,8 +92,8 @@ class HandleRequestServer implements Runnable
       try 
       {
     	  
-    	boolean flag = true;
-    	while(flag) {
+    	//boolean flag = true;
+    	//while(flag) {
     		// Receive text from client
 	        line = in.readLine();
 	        if(line.isEmpty()) {
@@ -117,42 +117,27 @@ class HandleRequestServer implements Runnable
     		            System.out.println(line);
     		            out.println(line);	
                     }
+                    /*
                     else {
                     	line = "File name already exists";
 		                System.out.println(line);
 		                out.println(line);	
                     }
-		            	 
-		            break;
-	            case '2':
-	            	line = "";
-		            for(String filename: map.keySet()) {
-		            	line = line + filename + "\n";
-		            }
-		            System.out.println(line);
-		            out.println(line);		 
+                    */	            	 
 		            break;
 	            case '3':
 	            	line = in.readLine();
-	            	String filename = line;
 	            	String content = "";
-	            	if(map.containsKey(line)) {
-	            		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-	            		    while ((line = br.readLine()) != null) {
-	            		       content += line;
-	            		    }
+	            	try (BufferedReader br = new BufferedReader(new FileReader("server"+serverId+"/"+line))) {
+	            		while ((line = br.readLine()) != null) {
+	            		    content += line;
 	            		}
-	            		out.println(content);	
-                    }
-                    else {
-                    	line = "File name does not exist";
-		                System.out.println(line);
-		                out.println(line);	
-                    }
+	            	}
+	            	out.println(content);	
 	            	break;
 	            case '4':
 	            	line = in.readLine();
-	            	filename = line;
+	            	String filename = line;
 	            	if(map.containsKey(line)) {
 	            		line = in.readLine();
 	            		int chunkId = Integer.parseInt(line);
@@ -192,22 +177,41 @@ class HandleRequestServer implements Runnable
 	            		System.out.println(line);
                     }
                     else {
-                    	line = "File name does not exist";
-		                System.out.println(line);
-		                out.println(line);	
+                    	line = in.readLine();
+	            		int chunkId = maxId.id;
+                    	
+                    	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
+                    	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
+                    	List<ChunkNode> list = new ArrayList<ChunkNode>();
+                    	list.add(chunknode);
+                    	map.put(filename, list);
+                    	maxId.id++;
+                    	                    	
+	            		line = in.readLine();
+	
+	            		Writer output;
+	            		output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
+	            		output.append(line);
+	            		int bytes = line.getBytes("UTF-8").length;
+	            		chunknode.space = chunknode.space - bytes;	            		    
+	            		output.close();
+	            		
+	            		line = "Write to file "+filename+" succeed";
+	            		out.println(line);
+	            		System.out.println(line);
                     }
 	            	
 	            	break;
-	            case '5':
-	            	flag = false;
-	            	break;
+	            //case '5':
+	            	//flag = false;
+	            	//break;
                 default:
             	    line = "Invalid option";
             	    out.println(line);	
     	            break;
 	        }
 	        printMap();
-    	}	    
+    	//}	    
       } 
       catch (IOException e) 
       {
