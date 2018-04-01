@@ -106,6 +106,44 @@ class HandleRequestServer implements Runnable
 	        char option = line.charAt(0);
 	        // Send response back to client
 	        switch(option) {
+	            case '0':
+	            	line = in.readLine();
+	            	String filename = line;
+	            	line = in.readLine();
+	            	int chunkId = Integer.parseInt(line);
+	            	
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+	            	List<ChunkNode> list = map.get(filename);
+	            	ChunkNode node = null;
+	            	for(ChunkNode n : list) {
+		            	if(n.chunkId == chunkId) {
+		            		 node = n;
+		            		 break;
+		            	}
+		            }
+
+	            	Writer output;
+	            			
+	            	Semaphore sem_file = sem_files.get(chunkId);
+	            	try {
+	    			    sem_file.acquire();
+	    			} catch (InterruptedException e1) {
+	    			    e1.printStackTrace();
+	    		    }
+	            	output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
+	                while(node.space > 0) {
+	                	output.append('\0');
+	                	node.space = node.space -1;
+	                }
+	                output.close();
+	            	sem_file.release();
+	            	sem.release();
+	                  	
+	            	break;
 	            case '1':
 	            	line = in.readLine();
 	            	
@@ -117,12 +155,12 @@ class HandleRequestServer implements Runnable
                     if(!map.containsKey(line)) {
                     	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
                     	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
-                    	List<ChunkNode> list = new ArrayList<ChunkNode>();
+                    	list = new ArrayList<ChunkNode>();
                     	list.add(chunknode);
                     	map.put(line, list);
                     	maxId.id++;
                     	
-                    	Semaphore sem_file = new Semaphore(1);
+                    	sem_file = new Semaphore(1);
                     	sem_files.add(sem_file);
                     	
                     	line = "New file has been created";
@@ -135,8 +173,8 @@ class HandleRequestServer implements Runnable
 	            	line = in.readLine();
 	            	String content = "";
 	            	
-	            	int chunkId = Integer.parseInt(line);
-	            	Semaphore sem_file = sem_files.get(chunkId);
+	            	chunkId = Integer.parseInt(line);
+	            	sem_file = sem_files.get(chunkId);
 				
 	            	try {
 					    sem_file.acquire();
@@ -153,7 +191,7 @@ class HandleRequestServer implements Runnable
 	            	break;
 	            case '4':
 	            	line = in.readLine();
-	            	String filename = line;
+	            	filename = line;
 
 	            	try {
 						sem.acquire();
@@ -165,7 +203,6 @@ class HandleRequestServer implements Runnable
 	            		chunkId = Integer.parseInt(line);
 	            		line = in.readLine();
 	            		if(chunkId != -1) {
-	            			Writer output;
 	            			
 	            			sem_file = sem_files.get(chunkId);
 	            			try {
@@ -178,7 +215,7 @@ class HandleRequestServer implements Runnable
 	            		    output.close();
 	            		    sem_file.release();
 	            		    int bytes = line.getBytes("UTF-8").length;
-	            		    List<ChunkNode> list = map.get(filename);
+	            		    list = map.get(filename);
 	            		    for(ChunkNode n : list) {
 	            		    	if(n.chunkId == chunkId) {
 	            		    		n.space = n.space - bytes;
@@ -190,14 +227,12 @@ class HandleRequestServer implements Runnable
 	            			chunkId = maxId.id;
 	            			ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
 	                    	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
-	                    	List<ChunkNode> list = map.get(filename);
+	                    	list = map.get(filename);
 	                    	list.add(chunknode);
 	                    	maxId.id++;
 	            			
 	                    	sem_file = new Semaphore(1);
 	                    	sem_files.add(sem_file);
-	            			
-	            			Writer output;
 	            			
 	            			try {
 	    					    sem_file.acquire();
@@ -222,7 +257,7 @@ class HandleRequestServer implements Runnable
                     	
                     	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
                     	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
-                    	List<ChunkNode> list = new ArrayList<ChunkNode>();
+                    	list = new ArrayList<ChunkNode>();
                     	list.add(chunknode);
                     	map.put(filename, list);
                     	maxId.id++;
@@ -231,8 +266,6 @@ class HandleRequestServer implements Runnable
                     	sem_files.add(sem_file);
                     	                    	
 	            		line = in.readLine();
-	
-	            		Writer output;
 	            		
 	            		try {
     					    sem_file.acquire();

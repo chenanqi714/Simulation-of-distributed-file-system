@@ -176,10 +176,15 @@ class HandleRequestMServer implements Runnable
 	            			}
 	            			if(lastChunk.chunkId != -1) {
 	            				if(lastChunk.space >= bytes) {
+	            					out.println("Enough space");
 	            					out.println(String.valueOf(lastChunk.serverId));
 	            					out.println(String.valueOf(lastChunk.chunkId));
 	            				}
 	            				else {
+	            					out.println("Not enough space");
+	            					out.println(String.valueOf(lastChunk.serverId));
+	            					out.println(String.valueOf(lastChunk.chunkId));
+	            					lastChunk.space = 0;
 	            					
 	            					int serverId = rand.nextInt(numOfServer);
 	                            	ChunkNode chunknode = new ChunkNode(-1, serverId);

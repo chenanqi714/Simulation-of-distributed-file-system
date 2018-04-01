@@ -59,7 +59,7 @@ public class SendHeartBeatMessage implements Runnable {
 			   listenSocket(host, port);
 			   out.println("H");
 			   out.println(serverId);
-			   System.out.println("Send heart messasge");
+			   System.out.println("Send heart beat messasge");
 			   
 			   try {
 				   sem.acquire();

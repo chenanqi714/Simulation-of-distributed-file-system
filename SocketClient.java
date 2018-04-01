@@ -128,7 +128,6 @@ public class SocketClient
                     		 System.out.println("Read from server"+n.serverId+ " chunkfile"+n.chunkId);
                     		 System.out.println(line);
                     	 }
-                    	 //this.listenSocket(host, port);
                     	 
                      }
                      else {
@@ -160,20 +159,55 @@ public class SocketClient
                    	     String text = line;
                    	     int bytes = line.getBytes("UTF-8").length;
                    	     out.println(bytes);
-                   	     line = in.readLine();
-                   	     int serverId = Integer.parseInt(line);
-                   	     line = in.readLine();
-                   	     int chunkId = Integer.parseInt(line);
-                   	     System.out.println("Get serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
                    	     
-                   	     this.listenSocket(hostname[serverId], port);
-                         out.println(option);
-                         out.println(filename);
-                         out.println(String.valueOf(chunkId));
-                         out.println(text);
-                         line = in.readLine();
-                         System.out.println(line);
-                         //this.listenSocket(host, port);
+                   	     line = in.readLine();
+                   	     if(line.equals("Enough space")) {
+                   	    	 line = in.readLine();
+                   	         int serverId = Integer.parseInt(line);
+                   	         line = in.readLine();
+                   	         int chunkId = Integer.parseInt(line);
+                   	         System.out.println("Get serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
+                   	     
+                   	         this.listenSocket(hostname[serverId], port);
+                             out.println(option);
+                             out.println(filename);
+                             out.println(String.valueOf(chunkId));
+                             out.println(text);
+                             line = in.readLine();
+                             System.out.println(line);
+                   	     }
+                   	     else {
+                   	    	 line = in.readLine();
+                  	         int serverId = Integer.parseInt(line);
+                  	         line = in.readLine();
+                  	         int chunkId = Integer.parseInt(line);
+                  	         System.out.println("Get old serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
+                   	     
+                  	         line = in.readLine();
+                	         int serverId_new = Integer.parseInt(line);
+                	         line = in.readLine();
+                	         int chunkId_new = Integer.parseInt(line);
+                	         System.out.println("Get new serverId and chunkId from Mserver "+ serverId_new+ " "+chunkId_new);
+                  	         
+                  	         
+                  	         this.listenSocket(hostname[serverId], port);
+                             out.println("0");
+                             out.println(filename);
+                             out.println(String.valueOf(chunkId));
+                        
+                             this.listenSocket(hostname[serverId_new], port);
+                  	         out.println(option);
+                             out.println(filename);
+                             out.println(String.valueOf(chunkId_new));
+                             out.println(text);
+                             line = in.readLine();
+                             System.out.println(line);
+                   	     
+                   	     
+                   	     }
+                   	     
+                   	                      	     
+                   	     
                      }
                      else {
                     	 //file does not exist
