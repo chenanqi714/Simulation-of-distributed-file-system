@@ -8,18 +8,20 @@ import java.io.*;
 import java.net.*;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 class SocketMServer 
 {
    ServerSocket server = null;
    HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
+   Semaphore sem = new Semaphore(1);
 
    public void listenSocket(int port)
    {
       try
       {
 	 server = new ServerSocket(port); 
-	 System.out.println("Server running on port " + port + 
+	 System.out.println("MServer running on port " + port + 
 	                     "," + " use ctrl-C to end");
       } 
       catch (IOException e) 
@@ -32,7 +34,7 @@ class SocketMServer
     	  HandleRequestMServer w;
          try
          {
-            w = new HandleRequestMServer(server.accept(), map);
+            w = new HandleRequestMServer(server.accept(), map, sem);
             Thread t = new Thread(w);
             t.start();
          }

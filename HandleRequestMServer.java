@@ -12,18 +12,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 class HandleRequestMServer implements Runnable 
 {
    private Socket client;
    HashMap<String, List<ChunkNode>> map;
    int numOfServer;
+   Semaphore sem;
    
-   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map) 
+   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem) 
    {
       this.client = client;
       this.map = map;
       this.numOfServer = 3;
+      this.sem = sem;
    }
    
    public void printMap() {
@@ -56,9 +59,9 @@ class HandleRequestMServer implements Runnable
       try 
       {
     	  
-    	//boolean flag = true;
-    	Random rand = new Random();
-    	//while(flag) {
+    	
+    	    Random rand = new Random();
+    	    
     		// Receive text from client
 	        line = in.readLine();
 	        if(line.isEmpty()) {
@@ -71,13 +74,19 @@ class HandleRequestMServer implements Runnable
 	            case '1':
 	            	line = in.readLine();
                     if(!map.containsKey(line)) {
-                    	//createFileUseJavaIO(line);
-                    	//int serverId = rand.nextInt(numOfServer);
                     	int serverId = rand.nextInt(numOfServer);
                     	ChunkNode chunknode = new ChunkNode(-1, serverId);
                     	List<ChunkNode> list = new ArrayList<ChunkNode>();
                     	list.add(chunknode);
+
+					    try {
+							sem.acquire();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+		
                     	map.put(line, list);
+                    	sem.release();
                     	line = String.valueOf(serverId);
     		            //System.out.println(line);
     		            out.println(line);	
@@ -92,15 +101,29 @@ class HandleRequestMServer implements Runnable
 		            break;
 	            case '2':
 	            	line = "";
+	            	
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+	
 		            for(String filename: map.keySet()) {
 		            	line = line + filename + " ";
 		            }
+		            sem.release();
 		            System.out.println(line);
 		            out.println(line);		 
 		            break;
 	            case '3':
 	            	line = in.readLine();
 	            	String filename = line;
+	            	
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 	            	if(map.containsKey(line)) {
 	            		line = "File exists";
 	            		out.println(line);
@@ -121,15 +144,23 @@ class HandleRequestMServer implements Runnable
 	            		}
 	            		
                     }
+	            	
                     else {
                     	line = "File name does not exist";
 		                System.out.println(line);
 		                out.println(line);	
                     }
+	            	sem.release();
 	            	break;
 	            case '4':
 	            	line = in.readLine();
 	            	filename = line;
+	            	
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 	            	if(map.containsKey(line)) {
 	            		line = "File exists";
 	            		out.println(line);	
@@ -165,11 +196,8 @@ class HandleRequestMServer implements Runnable
 		                System.out.println(line);
 		                out.println(line);	
                     }
-	            	
+	            	sem.release();
 	            	break;
-	            //case '5':
-	            	//flag = false;
-	            	//break;
 	            case 'H':
 	            	System.out.println("Get heart beat message from server");
 	            	line = in.readLine();
@@ -189,6 +217,12 @@ class HandleRequestMServer implements Runnable
 	            			int chunkId = Integer.parseInt(line);
 	            			line = in.readLine();
 	            			int space = Integer.parseInt(line);
+	            			
+	            			try {
+	    						sem.acquire();
+	    					} catch (InterruptedException e) {
+	    						e.printStackTrace();
+	    					}
 	            			List<ChunkNode> list = map.get(filename);
 	            			if(!list.isEmpty()) {
 	            				ChunkNode node = list.get(list.size()-1);
@@ -198,9 +232,17 @@ class HandleRequestMServer implements Runnable
 	            					//System.out.println("Update chunkId "+chunkId);
 	            				}
 	            			}
+	            			
+	            			sem.release();
 	            		}
 	            	}
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 	            	printMap();
+	            	sem.release();
 	            	System.out.println("End of heart beat message");
 	            	break;
                 default:

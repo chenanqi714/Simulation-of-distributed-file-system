@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 class HandleRequestServer implements Runnable 
 {
@@ -20,14 +21,18 @@ class HandleRequestServer implements Runnable
    int numOfServer;
    MaxChunkId maxId;
    int serverId;
+   Semaphore sem;
+   List<Semaphore> sem_files;
    
-   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId, MaxChunkId id) 
+   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId, MaxChunkId id, Semaphore sem, List<Semaphore> sem_files) 
    {
       this.client = client;
       this.map = map;
       this.numOfServer = 3;
       this.maxId = id;
       this.serverId = serverId;
+      this.sem = sem;
+      this.sem_files = sem_files;
    }
    
    public void printMap() {
@@ -92,8 +97,6 @@ class HandleRequestServer implements Runnable
       try 
       {
     	  
-    	//boolean flag = true;
-    	//while(flag) {
     		// Receive text from client
 	        line = in.readLine();
 	        if(line.isEmpty()) {
@@ -105,6 +108,12 @@ class HandleRequestServer implements Runnable
 	        switch(option) {
 	            case '1':
 	            	line = in.readLine();
+	            	
+				    try {
+					   sem.acquire();
+				    } catch (InterruptedException e) {
+					   e.printStackTrace();
+				    }
                     if(!map.containsKey(line)) {
                     	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
                     	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
@@ -113,39 +122,61 @@ class HandleRequestServer implements Runnable
                     	map.put(line, list);
                     	maxId.id++;
                     	
+                    	Semaphore sem_file = new Semaphore(1);
+                    	sem_files.add(sem_file);
+                    	
                     	line = "New file has been created";
     		            System.out.println(line);
     		            out.println(line);	
                     }
-                    /*
-                    else {
-                    	line = "File name already exists";
-		                System.out.println(line);
-		                out.println(line);	
-                    }
-                    */	            	 
+                    sem.release();           	 
 		            break;
 	            case '3':
 	            	line = in.readLine();
 	            	String content = "";
+	            	
+	            	int chunkId = Integer.parseInt(line);
+	            	Semaphore sem_file = sem_files.get(chunkId);
+				
+	            	try {
+					    sem_file.acquire();
+				    } catch (InterruptedException e1) {
+					    e1.printStackTrace();
+				    }
 	            	try (BufferedReader br = new BufferedReader(new FileReader("server"+serverId+"/"+line))) {
 	            		while ((line = br.readLine()) != null) {
 	            		    content += line;
 	            		}
 	            	}
+	            	sem_file.release();
 	            	out.println(content);	
 	            	break;
 	            case '4':
 	            	line = in.readLine();
 	            	String filename = line;
+
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 	            	if(map.containsKey(line)) {
 	            		line = in.readLine();
-	            		int chunkId = Integer.parseInt(line);
+	            		chunkId = Integer.parseInt(line);
 	            		line = in.readLine();
 	            		if(chunkId != -1) {
 	            			Writer output;
+	            			
+	            			sem_file = sem_files.get(chunkId);
+	            			try {
+	    					    sem_file.acquire();
+	    				    } catch (InterruptedException e1) {
+	    					    e1.printStackTrace();
+	    				    }
 	            		    output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
 	            		    output.append(line);
+	            		    output.close();
+	            		    sem_file.release();
 	            		    int bytes = line.getBytes("UTF-8").length;
 	            		    List<ChunkNode> list = map.get(filename);
 	            		    for(ChunkNode n : list) {
@@ -154,7 +185,6 @@ class HandleRequestServer implements Runnable
 	            		    		break;
 	            		    	}
 	            		    }
-	            		    output.close();
 	            		}
 	            		else {
 	            			chunkId = maxId.id;
@@ -164,21 +194,31 @@ class HandleRequestServer implements Runnable
 	                    	list.add(chunknode);
 	                    	maxId.id++;
 	            			
+	                    	sem_file = new Semaphore(1);
+	                    	sem_files.add(sem_file);
 	            			
 	            			Writer output;
+	            			
+	            			try {
+	    					    sem_file.acquire();
+	    				    } catch (InterruptedException e1) {
+	    					    e1.printStackTrace();
+	    				    }
 	            		    output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
 	            		    output.append(line);
+	            		    output.close();
+	            		    sem_file.release();
 	            		    int bytes = line.getBytes("UTF-8").length;
 	            		    chunknode.space = chunknode.space - bytes;	            		    
-	            		    output.close();
 	            		}
+	            		
 	            		line = "Write to file "+filename+" succeed";
 	            		out.println(line);
 	            		System.out.println(line);
                     }
                     else {
                     	line = in.readLine();
-	            		int chunkId = maxId.id;
+	            		chunkId = maxId.id;
                     	
                     	ChunkNode chunknode = new ChunkNode(maxId.id, serverId);
                     	createFileUseJavaIO("server"+serverId+"/"+maxId.id);
@@ -186,32 +226,39 @@ class HandleRequestServer implements Runnable
                     	list.add(chunknode);
                     	map.put(filename, list);
                     	maxId.id++;
+                    	
+                    	sem_file = new Semaphore(1);
+                    	sem_files.add(sem_file);
                     	                    	
 	            		line = in.readLine();
 	
 	            		Writer output;
+	            		
+	            		try {
+    					    sem_file.acquire();
+    				    } catch (InterruptedException e1) {
+    					    e1.printStackTrace();
+    				    }
 	            		output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkId, true));  //clears file every time
 	            		output.append(line);
+	            		output.close();
+	            		sem_file.release();
 	            		int bytes = line.getBytes("UTF-8").length;
 	            		chunknode.space = chunknode.space - bytes;	            		    
-	            		output.close();
 	            		
 	            		line = "Write to file "+filename+" succeed";
 	            		out.println(line);
 	            		System.out.println(line);
                     }
+	            	sem.release();
 	            	
 	            	break;
-	            //case '5':
-	            	//flag = false;
-	            	//break;
                 default:
             	    line = "Invalid option";
             	    out.println(line);	
     	            break;
 	        }
-	        printMap();
-    	//}	    
+	        //printMap();
       } 
       catch (IOException e) 
       {

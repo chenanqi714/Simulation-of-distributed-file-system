@@ -25,7 +25,7 @@ public class SocketClient
 	   		+ "5. Exit\n");
    }
    
-   public void communicate(String host, int port)
+   public void communicate(String host, int Mport, int port)
    {
       
 	  boolean flag = true;
@@ -37,7 +37,7 @@ public class SocketClient
         	  continue;
           }
           char option = line.charAt(0);
-          this.listenSocket(host, port);
+          this.listenSocket(host, Mport);
           switch(option) {
               case '1':
             	  //Send create new file option over socket
@@ -218,9 +218,9 @@ public class SocketClient
 
    public static void main(String[] args)
    {
-      if (args.length != 2)
+      if (args.length != 3)
       {
-         System.out.println("Usage:  client hostname port");
+         System.out.println("Usage:  client MserverHostname MserverPort ServerPort");
 	 System.exit(1);
       }
 
@@ -230,8 +230,9 @@ public class SocketClient
       client.hostname[2] = "dc03.utdallas.edu";
 
       String host = args[0];
-      int port = Integer.valueOf(args[1]);
+      int Mport = Integer.valueOf(args[1]);
+      int port = Integer.valueOf(args[2]);
       //client.listenSocket(host, port);
-      client.communicate(host, port);
+      client.communicate(host, Mport, port);
    }
 }

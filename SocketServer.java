@@ -1,15 +1,19 @@
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class SocketServer {
 	
 	   ServerSocket server = null;
 	   HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
 	   MaxChunkId id = new MaxChunkId();
+	   Semaphore sem = new Semaphore(1);
+	   List<Semaphore> sem_files = new ArrayList<Semaphore>();
 
-	   public void listenSocket(int port, int serverId)
+	   public void listenSocket(String hostname, int Mport, int port, int serverId)
 	   {
 	      try
 	      {
@@ -25,8 +29,8 @@ public class SocketServer {
 	      
 
 	      SendHeartBeatMessage h;
-		  String host = "csgrads1.utdallas.edu";
-		  h = new SendHeartBeatMessage(map, port, host, serverId);
+		  //String host = "csgrads1.utdallas.edu";
+		  h = new SendHeartBeatMessage(map, Mport, hostname, serverId, sem);
 		  Thread heart = new Thread(h);
 		  heart.start();
 
@@ -36,7 +40,7 @@ public class SocketServer {
 	         HandleRequestServer w;
 	         try
 	         {
-	            w = new HandleRequestServer(server.accept(), map, serverId, id);
+	            w = new HandleRequestServer(server.accept(), map, serverId, id, sem, sem_files);
 	            Thread t = new Thread(w);
 	            t.start();
 	         }
@@ -51,16 +55,18 @@ public class SocketServer {
 	
 	
 	public static void main(String[] args) {
-		if (args.length != 2)
+		if (args.length != 4)
 	      {
-	         System.out.println("Usage: java SocketServer port serverId");
-		 System.exit(1);
+	         System.out.println("Usage: java SocketServer MserverHostname MserverPort port serverId");
+		     System.exit(1);
 	      }
 
 	      SocketServer server = new SocketServer();
-	      int port = Integer.valueOf(args[0]);
-	      int serverId = Integer.valueOf(args[1]);
-	      server.listenSocket(port, serverId);
+	      String Mhostname = args[0];
+	      int Mport = Integer.valueOf(args[1]);
+	      int port = Integer.valueOf(args[2]);
+	      int serverId = Integer.valueOf(args[3]);
+	      server.listenSocket(Mhostname, Mport, port, serverId);
 
 	}
 

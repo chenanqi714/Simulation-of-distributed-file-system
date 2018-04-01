@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 public class SendHeartBeatMessage implements Runnable {
 	
@@ -17,13 +18,15 @@ public class SendHeartBeatMessage implements Runnable {
 	   Socket socket = null;
 	   PrintWriter out = null;
 	   BufferedReader in = null;
+	   Semaphore sem;
 	   
-	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host, int serverId) 
+	   SendHeartBeatMessage(HashMap<String, List<ChunkNode>> map, int port, String host, int serverId, Semaphore sem) 
 	   {
 	      this.map = map;
 	      this.port = port;
 	      this.host = host;
 	      this.serverId = serverId;
+	      this.sem = sem;
 	   }
 	   
 	   public void listenSocket(String host, int port)
@@ -57,6 +60,12 @@ public class SendHeartBeatMessage implements Runnable {
 			   out.println("H");
 			   out.println(serverId);
 			   System.out.println("Send heart messasge");
+			   
+			   try {
+				   sem.acquire();
+			   } catch (InterruptedException e1) {
+				e1.printStackTrace();
+			   }
 			   for(String filename: map.keySet()) {
 				   List<ChunkNode> list = map.get(filename);
 				   if(!list.isEmpty()) {
@@ -68,6 +77,7 @@ public class SendHeartBeatMessage implements Runnable {
 					   out.println(String.valueOf(space));
 				   }
 			   }
+			   sem.release();
 			   out.println("E");
 			   try {
 				   Thread.sleep(time);
