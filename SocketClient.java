@@ -1,8 +1,3 @@
-// By Greg Ozbirn, University of Texas at Dallas
-// Adapted from example at Sun website: 
-// http://java.sun.com/developer/onlineTraining/Programming/BasicJava2/socket.html
-// 11/07/07
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +46,7 @@ public class SocketClient
                   {
                      String filename = line;
                 	 line = in.readLine();
-                	 if(!line.equals("File exists") && !line.equals("Server is down")) {
+                	 if(!line.equals("File exists") && !line.equals("All Servers are down, cannot create new file")) {
                 		 int serverId = Integer.parseInt(line);
                          System.out.println("ServerId is: " + serverId);
                          
@@ -60,10 +55,9 @@ public class SocketClient
                          out.println(filename);
                          line = in.readLine();
                          System.out.println(line);
-                         //this.listenSocket(host, port);
                 	 }
                 	 else {
-                		//file already exist or server is down
+                		//file already exist or all servers are down
                     	 System.out.println(line);
                 	 }
                      
@@ -158,6 +152,10 @@ public class SocketClient
                    	     line = sc.nextLine();
                    	     String text = line;
                    	     int bytes = line.getBytes("UTF-8").length;
+                   	     if(bytes > 2048 ) {
+                   	    	 System.out.println("Then size of input text is larger than 2048 bytes");
+                   	    	 continue;
+                   	     }
                    	     out.println(bytes);
                    	     
                    	     line = in.readLine();
@@ -168,6 +166,7 @@ public class SocketClient
                    	         int chunkId = Integer.parseInt(line);
                    	         System.out.println("Get serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
                    	     
+                   	         //append line to the last chunk file
                    	         this.listenSocket(hostname[serverId], port);
                              out.println(option);
                              out.println(filename);
@@ -189,12 +188,13 @@ public class SocketClient
                 	         int chunkId_new = Integer.parseInt(line);
                 	         System.out.println("Get new serverId and chunkId from Mserver "+ serverId_new+ " "+chunkId_new);
                   	         
-                  	         
+                  	         //append null character to the last chunk
                   	         this.listenSocket(hostname[serverId], port);
                              out.println("0");
                              out.println(filename);
                              out.println(String.valueOf(chunkId));
-                        
+                             
+                             //create a new chunk and append line to it
                              this.listenSocket(hostname[serverId_new], port);
                   	         out.println(option);
                              out.println(filename);
@@ -258,7 +258,7 @@ public class SocketClient
    {
       if (args.length != 3)
       {
-         System.out.println("Usage:  client MserverHostname MserverPort ServerPort");
+         System.out.println("Usage:  java SocketClient MserverHostname MserverPort ServerPort");
 	 System.exit(1);
       }
 

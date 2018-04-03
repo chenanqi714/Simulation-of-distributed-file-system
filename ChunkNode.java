@@ -6,7 +6,7 @@ public class ChunkNode {
 	public ChunkNode(int chunkId, int serverId) {
 		this.chunkId = chunkId;
 		this.serverId = serverId;
-		this.space = 8;
+		this.space = 8192;
 	}
 
 }

@@ -1,9 +1,3 @@
-// By Greg Ozbirn, University of Texas at Dallas
-// Adapted from example at Sun website:
-// http://java.sun.com/developer/onlineTraining/Programming/BasicJava2/socket.html
-// 11/07/07
-
-
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
@@ -16,8 +10,9 @@ class SocketMServer
    HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
    Semaphore sem = new Semaphore(1);
    int numOfServer = 3;
+   int max_interval = 15000;
    long[] times = new long[numOfServer];
-   Semaphore[] sem_time = new Semaphore[numOfServer];
+   Semaphore sem_time = new Semaphore(1);
    
    
    public void listenSocket(int port)
@@ -38,7 +33,7 @@ class SocketMServer
     	  HandleRequestMServer w;
          try
          {
-            w = new HandleRequestMServer(server.accept(), map, sem, numOfServer, times, sem_time);
+            w = new HandleRequestMServer(server.accept(), map, sem, numOfServer, times, sem_time, max_interval);
             Thread t = new Thread(w);
             t.start();
          }

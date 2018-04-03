@@ -16,9 +16,10 @@ class HandleRequestMServer implements Runnable
    int numOfServer;
    Semaphore sem;
    long[] times;
-   Semaphore[] sem_time;
+   Semaphore sem_time;
+   int max_interval;
    
-   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem, int numOfServer, long[] times, Semaphore[] sem_time) 
+   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem, int numOfServer, long[] times, Semaphore sem_time, int max_interval) 
    {
       this.client = client;
       this.map = map;
@@ -26,9 +27,8 @@ class HandleRequestMServer implements Runnable
       this.sem = sem;
       this.times = times;
       this.sem_time = sem_time;
-      for(int i = 0; i < sem_time.length; ++i) {
-    	  sem_time[i] = new Semaphore(1);
-      }
+      this.max_interval = max_interval;
+      
    }
    
    public void printMap() {
@@ -76,21 +76,29 @@ class HandleRequestMServer implements Runnable
 	            case '1':
 	            	line = in.readLine();
                     if(!map.containsKey(line)) {
-                    	int serverId = rand.nextInt(numOfServer);
                     	
+                    	List<Integer> serverIds = new ArrayList<Integer>();
                     	try {
-    					    sem_time[serverId].acquire();
+    					    sem_time.acquire();
     				    } catch (InterruptedException e1) {
     					    e1.printStackTrace();
     				    }
-    	            	long interval = System.currentTimeMillis() - times[serverId];
-    				    sem_time[serverId].release();
-    				    if(interval > 15000) {
-    				    	line = "Server is down";
+                    	for(int i = 0; i < numOfServer; ++i) {
+                    		long interval = System.currentTimeMillis() - times[i];
+                    		System.out.println("interval is "+interval);
+                    		System.out.println("Maxinterval is "+max_interval);
+                    		if(interval < max_interval) {
+                    			serverIds.add(i);
+                    		}
+                    	}
+    				    sem_time.release();
+    				    if(serverIds.isEmpty()) {
+    				    	line = "All Servers are down, cannot create new file";
     				    	System.out.println(line);
     		                out.println(line);
     				    }
     				    else {
+    				    	int serverId = serverIds.get(rand.nextInt(serverIds.size()));
     				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
                         	List<ChunkNode> list = new ArrayList<ChunkNode>();
                         	list.add(chunknode);
@@ -153,14 +161,14 @@ class HandleRequestMServer implements Runnable
 	            			if(lastChunk.chunkId != -1) {
 	            				for(ChunkNode n: list) {
 	            					try {
-	            					    sem_time[n.serverId].acquire();
+	            					    sem_time.acquire();
 	            				    } catch (InterruptedException e1) {
 	            					    e1.printStackTrace();
 	            				    }
 	            	            	long interval = System.currentTimeMillis() - times[n.serverId];
-	            				    sem_time[n.serverId].release();
-	            				    if(interval > 15000) {
-	            				    	line = "Server is down";
+	            				    sem_time.release();
+	            				    if(interval > max_interval) {
+	            				    	line = "Server"+n.serverId+" is down, cannot read file";
 	                                    break;
 	            				    }
 	            				}
@@ -212,14 +220,14 @@ class HandleRequestMServer implements Runnable
 	            			if(lastChunk.chunkId != -1) {
 	            				
 	            				try {
-            					    sem_time[lastChunk.serverId].acquire();
+            					    sem_time.acquire();
             				    } catch (InterruptedException e1) {
             					    e1.printStackTrace();
             				    }
             	            	long interval = System.currentTimeMillis() - times[lastChunk.serverId];
-            				    sem_time[lastChunk.serverId].release();
-            				    if(interval > 15000) {
-            				    	out.println("Server is down");
+            				    sem_time.release();
+            				    if(interval > max_interval && lastChunk.space != 0) {
+            				    	out.println("Server"+lastChunk.serverId+" is down, cannot write to chunk file");
             				    }
             				    else {
             				    	if(lastChunk.space >= bytes) {
@@ -229,23 +237,31 @@ class HandleRequestMServer implements Runnable
     	            				}
     	            				else {   	            					
     	            					lastChunk.space = 0;   	            					
-    	            					int serverId = rand.nextInt(numOfServer);
-    	            					
+    	            					List<Integer> serverIds = new ArrayList<Integer>();
     	            					try {
-    	            					    sem_time[serverId].acquire();
+    	            					    sem_time.acquire();
     	            				    } catch (InterruptedException e1) {
     	            					    e1.printStackTrace();
     	            				    }
-    	            	            	interval = System.currentTimeMillis() - times[serverId];
-    	            				    sem_time[serverId].release();
-    	            				    if(interval > 15000) {
-    	            				    	out.println("Server is down");
+    	                            	for(int i = 0; i < numOfServer; ++i) {
+    	                            		interval = System.currentTimeMillis() - times[i];
+    	                            		if(interval < max_interval) {
+    	                            			serverIds.add(i);
+    	                            		}
+    	                            	}
+    	            				    sem_time.release();
+    	            				    
+    	            				    if(serverIds.isEmpty()) {
+    	            				    	line = "All Servers are down, cannot create new chunck file";
+    	            				    	System.out.println(line);
+    	            		                out.println(line);
     	            				    }
     	            				    else {
     	            				    	out.println("Not enough space");
         	            					out.println(String.valueOf(lastChunk.serverId));
         	            					out.println(String.valueOf(lastChunk.chunkId));
-    	            				    	         				    	
+    	            				    	
+        	            					int serverId = serverIds.get(rand.nextInt(serverIds.size()));
     	            				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
         	                            	list.add(chunknode);
         	                            	
@@ -309,13 +325,13 @@ class HandleRequestMServer implements Runnable
 	            	}
 	            	
 				    try {
-					    sem_time[serverId].acquire();
+					    sem_time.acquire();
 				    } catch (InterruptedException e1) {
 					    e1.printStackTrace();
 				    }
 	            	times[serverId] = System.currentTimeMillis();
 	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
-				    sem_time[serverId].release();
+				    sem_time.release();
 				    
 	            	try {
 						sem.acquire();
