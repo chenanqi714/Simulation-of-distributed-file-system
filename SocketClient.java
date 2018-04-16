@@ -46,15 +46,16 @@ public class SocketClient
                   {
                      String filename = line;
                 	 line = in.readLine();
-                	 if(!line.equals("File exists") && !line.equals("All Servers are down, cannot create new file")) {
-                		 int serverId = Integer.parseInt(line);
-                         System.out.println("ServerId is: " + serverId);
-                         
-                         this.listenSocket(hostname[serverId], port);
-                         out.println(option);
-                         out.println(filename);
-                         line = in.readLine();
-                         System.out.println(line);
+                	 if(!line.equals("File exists") && !line.equals("More than two servers are down, cannot create new file")) {
+                		 System.out.println("ServerIds are: " + line);
+                		 String[] serverId = line.split(",");
+                         for(String id: serverId) {
+                        	 this.listenSocket(hostname[Integer.parseInt(id)], port);
+                        	 out.println(option);
+                        	 out.println(filename);
+                        	 line = in.readLine();
+                        	 System.out.println(line);
+                         }
                 	 }
                 	 else {
                 		//file already exist or all servers are down
@@ -125,7 +126,7 @@ public class SocketClient
                     	 
                      }
                      else {
-                    	 //file does not exist or server is down
+                    	 //file does not exist or server is down or mapping has not been updated
                     	 System.out.println(line);
                      }
                   } 
@@ -159,50 +160,57 @@ public class SocketClient
                    	     out.println(bytes);
                    	     
                    	     line = in.readLine();
-                   	     if(line.equals("Enough space")) {
+                   	     if(line.equals("Enough space")) {                 	    	 
                    	    	 line = in.readLine();
-                   	         int serverId = Integer.parseInt(line);
-                   	         line = in.readLine();
-                   	         int chunkId = Integer.parseInt(line);
-                   	         System.out.println("Get serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
-                   	     
-                   	         //append line to the last chunk file
-                   	         this.listenSocket(hostname[serverId], port);
-                             out.println(option);
-                             out.println(filename);
-                             out.println(String.valueOf(chunkId));
-                             out.println(text);
-                             line = in.readLine();
-                             System.out.println(line);
+                   	    	 System.out.println("ServerIds are: " + line);
+                   	    	 String[] serverId = line.split(",");
+                             
+                   	    	 line = in.readLine();
+                   	    	 System.out.println("ChunkIds are: " + line);
+                  	    	 String[] chunkId = line.split(",");
+                   	    	 
+                  	    	 //append line to the last chunk file 
+                   	    	 for(int i = 0; i < serverId.length; ++i) {
+                           	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                           	    out.println(option);
+                           	    out.println(filename);
+                           	    out.println(chunkId[i]);
+                           	    out.println(text);
+                           	    line = in.readLine();
+                           	    System.out.println(line);
+                             }
                    	     }
                    	     else if(line.equals("Not enough space")) {
                    	    	 line = in.readLine();
-                  	         int serverId = Integer.parseInt(line);
-                  	         line = in.readLine();
-                  	         int chunkId = Integer.parseInt(line);
-                  	         System.out.println("Get old serverId and chunkId from Mserver "+ serverId+ " "+chunkId);
+                   	    	 System.out.println("Old ServerIds are: " + line);
+                  	    	 String[] serverId = line.split(",");
+                  	         
+                  	    	 line = in.readLine();
+                  	    	 System.out.println("Old ChunkIds are: " + line);
+                 	    	 String[] chunkId = line.split(",");
                    	     
                   	         line = in.readLine();
-                	         int serverId_new = Integer.parseInt(line);
-                	         line = in.readLine();
-                	         int chunkId_new = Integer.parseInt(line);
-                	         System.out.println("Get new serverId and chunkId from Mserver "+ serverId_new+ " "+chunkId_new);
+                  	         System.out.println("New ServerIds are: " + line);
+               	    	     String[] serverId_new = line.split(",");                	      
                   	         
                   	         //append null character to the last chunk
-                  	         this.listenSocket(hostname[serverId], port);
-                             out.println("0");
-                             out.println(filename);
-                             out.println(String.valueOf(chunkId));
+               	    	     for(int i = 0; i < serverId.length; ++i) {
+                         	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                         	    out.println("0");
+                         	    out.println(filename);
+                         	    out.println(chunkId[i]);
+                             }
                              
                              //create a new chunk and append line to it
-                             this.listenSocket(hostname[serverId_new], port);
-                  	         out.println(option);
-                             out.println(filename);
-                             out.println(String.valueOf(chunkId_new));
-                             out.println(text);
-                             line = in.readLine();
-                             System.out.println(line);
-                   	     
+               	    	     for(int i = 0; i < serverId.length; ++i) {
+                         	    this.listenSocket(hostname[Integer.parseInt(serverId_new[i])], port);
+                         	    out.println(option);
+                         	    out.println(filename);
+                         	    out.println("-1");
+                         	    out.println(text);
+                         	    line = in.readLine();
+                         	    System.out.println(line);
+                             }                   	     
                    	     
                    	     }
                    	     else {

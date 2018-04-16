@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -12,14 +13,15 @@ import java.util.concurrent.Semaphore;
 class HandleRequestMServer implements Runnable 
 {
    private Socket client;
-   HashMap<String, List<ChunkNode>> map;
+   HashMap<String, List<ChunkNode[]>> map;
    int numOfServer;
    Semaphore sem;
    long[] times;
    Semaphore sem_time;
    int max_interval;
+   int numOfCopy;
    
-   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode>> map, Semaphore sem, int numOfServer, long[] times, Semaphore sem_time, int max_interval) 
+   HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode[]>> map, Semaphore sem, int numOfServer, long[] times, Semaphore sem_time, int max_interval, int numOfCopy) 
    {
       this.client = client;
       this.map = map;
@@ -28,15 +30,18 @@ class HandleRequestMServer implements Runnable
       this.times = times;
       this.sem_time = sem_time;
       this.max_interval = max_interval;
-      
+      this.numOfCopy = numOfCopy;
    }
    
    public void printMap() {
 	   for(String filename: map.keySet()) {
-		   List<ChunkNode> list = map.get(filename);
+		   List<ChunkNode[]> list = map.get(filename);
 		   System.out.print(filename+": \n");
-		   for(ChunkNode n: list) {
-			   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space);
+		   for(ChunkNode[] chunk_ary: list) {
+			   for(ChunkNode n : chunk_ary) {
+				   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space);
+			   }
+			   System.out.println();
 		   }
 	   }
    }
@@ -92,16 +97,22 @@ class HandleRequestMServer implements Runnable
                     		}
                     	}
     				    sem_time.release();
-    				    if(serverIds.isEmpty()) {
-    				    	line = "All Servers are down, cannot create new file";
+    				    if(serverIds.size() < 3) {
+    				    	line = "More than two servers are down, cannot create new file";
     				    	System.out.println(line);
     		                out.println(line);
     				    }
     				    else {
-    				    	int serverId = serverIds.get(rand.nextInt(serverIds.size()));
-    				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
-                        	List<ChunkNode> list = new ArrayList<ChunkNode>();
-                        	list.add(chunknode);
+    				    	StringBuilder builder = new StringBuilder();
+    				    	ChunkNode[] chunk_ary = new ChunkNode[numOfCopy];
+    				    	Collections.shuffle(serverIds);
+    				    	for(int i = 0; i < numOfCopy; ++i) {
+    				    		builder.append(serverIds.get(i)+",");
+    				    		ChunkNode chunknode = new ChunkNode(-1, serverIds.get(i));
+    				    		chunk_ary[i] = chunknode;
+    				    	}
+                        	List<ChunkNode[]> list = new ArrayList<ChunkNode[]>();
+                        	list.add(chunk_ary);
 
     					    try {
     							sem.acquire();
@@ -111,8 +122,7 @@ class HandleRequestMServer implements Runnable
     		
                         	map.put(line, list);
                         	sem.release();
-                        	line = String.valueOf(serverId);
-        		            //System.out.println(line);
+                        	line = builder.toString();
         		            out.println(line);    				    	
     				    }
                     }
@@ -151,38 +161,41 @@ class HandleRequestMServer implements Runnable
 	            	if(map.containsKey(line)) {
 	            		line = "File exists";
 	            		//out.println(line);
-	            		List<ChunkNode> list = map.get(filename);
+	            		List<ChunkNode[]> list = map.get(filename);
 	            		if(!list.isEmpty()) {
-	            			ChunkNode lastChunk = list.get(list.size() - 1);
-	            			//wait until chunkId is updated by server
-	            			while(lastChunk.chunkId == -1) {
-	            				continue;
-	            			}
-	            			if(lastChunk.chunkId != -1) {
-	            				for(ChunkNode n: list) {
+	            			List<ChunkNode> list_selected = new ArrayList<ChunkNode>();
+	            		    for(ChunkNode[] chunk_ary: list) {
+	            				List<Integer> set = new ArrayList<Integer>();
+	            				for(int i = 0; i < numOfCopy; ++i) {
 	            					try {
-	            					    sem_time.acquire();
-	            				    } catch (InterruptedException e1) {
-	            					    e1.printStackTrace();
-	            				    }
-	            	            	long interval = System.currentTimeMillis() - times[n.serverId];
-	            				    sem_time.release();
-	            				    if(interval > max_interval) {
-	            				    	line = "Server"+n.serverId+" is down, cannot read file";
-	                                    break;
-	            				    }
-	            				}
-	            				
-	            				out.println(line);
-	            				
-	            				if(line.equals("File exists")){
-	            					for(ChunkNode n: list) {
-		            					out.println(n.chunkId);
-		            					out.println(n.serverId);
+		            					sem_time.acquire();
+		            				} catch (InterruptedException e1) {
+		            					e1.printStackTrace();
 		            				}
-		            				out.println("E");
+		            	            long interval = System.currentTimeMillis() - times[chunk_ary[i].serverId];
+		            				sem_time.release();
+		            				if(interval <= max_interval && chunk_ary[i].chunkId != -1) {
+		            				   set.add(i);
+		            				}	            						
+	            			    }
+	            				if(set.size() > 0) {
+	            					int i = rand.nextInt(set.size());
+	            					list_selected.add(chunk_ary[set.get(i)]);
 	            				}
+	            				else {
+	            					line = "All three servers are down or mapping has not been updated, cannot read file";
+	            					break;
+	            				}
+	            			}
 	            				
+	            		    out.println(line);
+	            				
+	            		    if(line.equals("File exists")){
+	            				for(ChunkNode n: list_selected) {
+		            				out.println(n.chunkId);
+		            				out.println(n.serverId);
+		            			}
+		            			out.println("E");
 	            			}
 	            		}
 	            		
@@ -210,72 +223,100 @@ class HandleRequestMServer implements Runnable
 	            		//read bytes
 	            		line = in.readLine();
 	            		int bytes = Integer.parseInt(line);
-	            		List<ChunkNode> list = map.get(filename);
+	            		List<ChunkNode[]> list = map.get(filename);
 	            		if(!list.isEmpty()) {
-	            			ChunkNode lastChunk = list.get(list.size() - 1);
-	            			//wait until chunkId is updated by server
-	            			while(lastChunk.chunkId == -1) {
-	            				continue;
-	            			}
-	            			if(lastChunk.chunkId != -1) {
-	            				
+	            			ChunkNode[] chunk_ary = list.get(list.size() - 1);
+	            			StringBuilder builder_serverId = new StringBuilder();
+	            			StringBuilder builder_chunkId = new StringBuilder();
+	            			for(int i = 0; i < numOfCopy; ++i) {
 	            				try {
             					    sem_time.acquire();
             				    } catch (InterruptedException e1) {
             					    e1.printStackTrace();
             				    }
-            	            	long interval = System.currentTimeMillis() - times[lastChunk.serverId];
+            	            	long interval = System.currentTimeMillis() - times[chunk_ary[i].serverId];
             				    sem_time.release();
-            				    if(interval > max_interval && lastChunk.space != 0) {
-            				    	out.println("Server"+lastChunk.serverId+" is down, cannot write to chunk file");
+            				    if(interval > max_interval && chunk_ary[i].space != 0) {
+            				    	line = "Server"+chunk_ary[i].serverId+" is down, cannot write to chunk file";
+            				    	break;
             				    }
             				    else {
-            				    	if(lastChunk.space >= bytes) {
-    	            					out.println("Enough space");
-    	            					out.println(String.valueOf(lastChunk.serverId));
-    	            					out.println(String.valueOf(lastChunk.chunkId));
+            				    	if(chunk_ary[i].space >= bytes && chunk_ary[i].chunkId != -1) {
+            				    		if(i == 0) {
+            				    			line = "Enough space";
+            				    		}
+            				    		builder_serverId.append(chunk_ary[i].serverId+",");
+            				    		builder_chunkId.append(chunk_ary[i].chunkId+",");
     	            				}
-    	            				else {   	            					
-    	            					lastChunk.space = 0;   	            					
-    	            					List<Integer> serverIds = new ArrayList<Integer>();
-    	            					try {
-    	            					    sem_time.acquire();
-    	            				    } catch (InterruptedException e1) {
-    	            					    e1.printStackTrace();
-    	            				    }
-    	                            	for(int i = 0; i < numOfServer; ++i) {
-    	                            		interval = System.currentTimeMillis() - times[i];
-    	                            		if(interval < max_interval) {
-    	                            			serverIds.add(i);
-    	                            		}
-    	                            	}
-    	            				    sem_time.release();
+    	            				else if(chunk_ary[i].space < bytes && chunk_ary[i].chunkId != -1){   	            					
+    	            					chunk_ary[i].space = 0;
     	            				    
-    	            				    if(serverIds.isEmpty()) {
-    	            				    	line = "All Servers are down, cannot create new chunck file";
-    	            				    	System.out.println(line);
-    	            		                out.println(line);
-    	            				    }
-    	            				    else {
-    	            				    	out.println("Not enough space");
-        	            					out.println(String.valueOf(lastChunk.serverId));
-        	            					out.println(String.valueOf(lastChunk.chunkId));
-    	            				    	
-        	            					int serverId = serverIds.get(rand.nextInt(serverIds.size()));
-    	            				    	ChunkNode chunknode = new ChunkNode(-1, serverId);
-        	                            	list.add(chunknode);
-        	                            	
-        	            					out.println(String.valueOf(serverId));
-        	            					out.println(String.valueOf(-1));
-    	            				    }
+    	            				    if(i == 0) {
+    	            				    	line = "Not enough space";
+                				        }
+    	            				    builder_serverId.append(chunk_ary[i].serverId+",");
+        	            				builder_chunkId.append(chunk_ary[i].chunkId+",");
     	            					
     	                            	
+    	            				}
+    	            				else {
+    	            					line = "Mapping has not been updated, cannot write to chunk file";
+    	            					break;
     	            				}
             				    	
             				    }
 	            				
-	            				
 	            			}
+	            			if(line.equals("Not enough space")) {
+	            				List<Integer> serverIds = new ArrayList<Integer>();
+	                        	try {
+	        					    sem_time.acquire();
+	        				    } catch (InterruptedException e1) {
+	        					    e1.printStackTrace();
+	        				    }
+	                        	for(int i = 0; i < numOfServer; ++i) {
+	                        		long interval = System.currentTimeMillis() - times[i];
+	                        		if(interval < max_interval) {
+	                        			serverIds.add(i);
+	                        		}
+	                        	}
+	        				    sem_time.release();
+	        				    if(serverIds.size() < 3) {
+	        				    	line = "More than two servers are down, cannot create new chunk";
+	        				    	System.out.println(line);
+	        		                out.println(line);
+	        				    }
+	        				    else {
+	        				    	out.println(line);
+	        				    	out.println(builder_serverId.toString());
+		        					out.println(builder_chunkId.toString()); 
+		        					
+	        				    	StringBuilder builder_serverId_new = new StringBuilder();
+	        				    	ChunkNode[] chunk_ary_new = new ChunkNode[numOfCopy];
+	        				    	Collections.shuffle(serverIds);
+	        				    	for(int i = 0; i < numOfCopy; ++i) {
+	        				    		builder_serverId_new.append(serverIds.get(i)+",");
+	        				    		ChunkNode chunknode = new ChunkNode(-1, serverIds.get(i));
+	        				    		chunk_ary_new[i] = chunknode;
+	        				    	}
+
+	        					    list.add(chunk_ary_new);
+	                            	map.put(filename, list);
+	                            	
+	                            	line = builder_serverId_new.toString();
+
+	            		            out.println(line);    				    	
+	        				    }
+	            			}
+	            			else if(line.equals("Enough space")){
+	            				out.println(line);
+		            			out.println(builder_serverId.toString());
+	        					out.println(builder_chunkId.toString());         				
+	            			}
+	            			else {//server is down
+	            				out.println(line);
+	            			}
+            				    
 	            		}
                     }
                     else {
@@ -289,6 +330,14 @@ class HandleRequestMServer implements Runnable
 	            	line = in.readLine();
 	            	int serverId = Integer.parseInt(line);
 	            	System.out.println("Get heart beat message from server"+serverId);
+	            	try {
+					    sem_time.acquire();
+				    } catch (InterruptedException e1) {
+					    e1.printStackTrace();
+				    }
+	            	times[serverId] = System.currentTimeMillis();
+	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
+				    sem_time.release();
 	            	boolean end = false;
 	            	while(!end) {
 	            		line = in.readLine();
@@ -298,9 +347,9 @@ class HandleRequestMServer implements Runnable
 	            		}
 	            		else {
 	            			filename = line;
-	            			//System.out.println("Get filename "+filename);
+
 	            			line = in.readLine();
-	            			//System.out.println("Get chunkId "+line);
+
 	            			int chunkId = Integer.parseInt(line);
 	            			line = in.readLine();
 	            			int space = Integer.parseInt(line);
@@ -310,28 +359,21 @@ class HandleRequestMServer implements Runnable
 	    					} catch (InterruptedException e) {
 	    						e.printStackTrace();
 	    					}
-	            			List<ChunkNode> list = map.get(filename);
+	            			List<ChunkNode[]> list = map.get(filename);
 	            			if(!list.isEmpty()) {
-	            				ChunkNode node = list.get(list.size()-1);
-	            				if(node.serverId == serverId) {
-	            					node.chunkId = chunkId;
-	            					node.space = space;
-	            					//System.out.println("Update chunkId "+chunkId);
+	            				ChunkNode[] chunk_ary = list.get(list.size()-1);
+	            				for(ChunkNode node: chunk_ary) {
+	            					if(node.serverId == serverId) {
+	            					   node.chunkId = chunkId;
+	            					   node.space = space;
+	            				    }
 	            				}
-	            			}
-	            			
+	            			}	            			
 	            			sem.release();
 	            		}
 	            	}
 	            	
-				    try {
-					    sem_time.acquire();
-				    } catch (InterruptedException e1) {
-					    e1.printStackTrace();
-				    }
-	            	times[serverId] = System.currentTimeMillis();
-	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
-				    sem_time.release();
+				    
 				    
 	            	try {
 						sem.acquire();

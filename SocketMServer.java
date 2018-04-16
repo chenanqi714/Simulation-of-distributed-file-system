@@ -7,9 +7,10 @@ import java.util.concurrent.Semaphore;
 class SocketMServer 
 {
    ServerSocket server = null;
-   HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
+   HashMap<String, List<ChunkNode[]>> map = new HashMap<String, List<ChunkNode[]>>();
    Semaphore sem = new Semaphore(1);
    int numOfServer = 5;
+   int numOfCopy = 3;
    int max_interval = 15000;
    long[] times = new long[numOfServer];
    Semaphore sem_time = new Semaphore(1);
@@ -33,7 +34,7 @@ class SocketMServer
     	  HandleRequestMServer w;
          try
          {
-            w = new HandleRequestMServer(server.accept(), map, sem, numOfServer, times, sem_time, max_interval);
+            w = new HandleRequestMServer(server.accept(), map, sem, numOfServer, times, sem_time, max_interval, numOfCopy);
             Thread t = new Thread(w);
             t.start();
          }
