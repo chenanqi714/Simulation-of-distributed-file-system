@@ -9,7 +9,7 @@ public class SocketClient
    Socket socket = null;
    PrintWriter out = null;
    BufferedReader in = null;
-   String[] hostname = new String[3];
+   String[] hostname = new String[5];
    
    public void printMenu() {
 	   System.out.println("\nPlease select an option:\n"
@@ -266,6 +266,8 @@ public class SocketClient
       client.hostname[0] = "dc01.utdallas.edu";
       client.hostname[1] = "dc02.utdallas.edu";
       client.hostname[2] = "dc03.utdallas.edu";
+      client.hostname[3] = "dc04.utdallas.edu";
+      client.hostname[4] = "dc05.utdallas.edu";
 
       String host = args[0];
       int Mport = Integer.valueOf(args[1]);

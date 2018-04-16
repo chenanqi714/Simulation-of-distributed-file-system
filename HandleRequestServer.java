@@ -27,7 +27,7 @@ class HandleRequestServer implements Runnable
    {
       this.client = client;
       this.map = map;
-      this.numOfServer = 3;
+      this.numOfServer = 5;
       this.maxId = id;
       this.serverId = serverId;
       this.sem = sem;

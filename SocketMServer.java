@@ -9,7 +9,7 @@ class SocketMServer
    ServerSocket server = null;
    HashMap<String, List<ChunkNode>> map = new HashMap<String, List<ChunkNode>>();
    Semaphore sem = new Semaphore(1);
-   int numOfServer = 3;
+   int numOfServer = 5;
    int max_interval = 15000;
    long[] times = new long[numOfServer];
    Semaphore sem_time = new Semaphore(1);
