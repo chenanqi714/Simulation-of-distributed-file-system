@@ -218,11 +218,17 @@ class HandleRequestMServer implements Runnable
 						e.printStackTrace();
 					}
 	            	if(map.containsKey(line)) {
+	            		sem.release();
 	            		line = "File exists";
 	            		out.println(line);	
 	            		//read bytes
 	            		line = in.readLine();
 	            		int bytes = Integer.parseInt(line);
+	            		try {
+							sem.acquire();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 	            		List<ChunkNode[]> list = map.get(filename);
 	            		if(!list.isEmpty()) {
 	            			ChunkNode[] chunk_ary = list.get(list.size() - 1);
@@ -249,7 +255,7 @@ class HandleRequestMServer implements Runnable
             				    		builder_chunkId.append(chunk_ary[i].chunkId+",");
     	            				}
     	            				else if(chunk_ary[i].space < bytes && chunk_ary[i].chunkId != -1){   	            					
-    	            					chunk_ary[i].space = 0;
+    	            					//chunk_ary[i].space = 0;
     	            				    
     	            				    if(i == 0) {
     	            				    	line = "Not enough space";
@@ -290,41 +296,44 @@ class HandleRequestMServer implements Runnable
 	        				    	out.println(line);
 	        				    	out.println(builder_serverId.toString());
 		        					out.println(builder_chunkId.toString()); 
-		        					
-	        				    	StringBuilder builder_serverId_new = new StringBuilder();
-	        				    	ChunkNode[] chunk_ary_new = new ChunkNode[numOfCopy];
-	        				    	Collections.shuffle(serverIds);
-	        				    	for(int i = 0; i < numOfCopy; ++i) {
-	        				    		builder_serverId_new.append(serverIds.get(i)+",");
-	        				    		ChunkNode chunknode = new ChunkNode(-1, serverIds.get(i));
-	        				    		chunk_ary_new[i] = chunknode;
-	        				    	}
-
-	        					    list.add(chunk_ary_new);
-	                            	map.put(filename, list);
-	                            	
-	                            	line = builder_serverId_new.toString();
-
-	            		            out.println(line);    				    	
+		        					line = in.readLine();
+		        					if(line.equals("Commit")) {
+		        						StringBuilder builder_serverId_new = new StringBuilder();
+	        				    	    ChunkNode[] chunk_ary_new = new ChunkNode[numOfCopy];
+	        				    	    Collections.shuffle(serverIds);
+	        				    	    for(int i = 0; i < numOfCopy; ++i) {
+	        				    		    builder_serverId_new.append(serverIds.get(i)+",");
+	        				    		    ChunkNode chunknode = new ChunkNode(-1, serverIds.get(i));
+	        				    		    chunk_ary_new[i] = chunknode;
+	        				    	    }
+	        					        list.add(chunk_ary_new);
+	                            	    map.put(filename, list);	                            	
+	                            	    line = builder_serverId_new.toString();
+	                            	    System.out.println("New server ids are: "+line);
+	            		                out.println(line);    		
+		        					}        				    			    	
 	        				    }
 	            			}
 	            			else if(line.equals("Enough space")){
 	            				out.println(line);
 		            			out.println(builder_serverId.toString());
-	        					out.println(builder_chunkId.toString());         				
+	        					out.println(builder_chunkId.toString());   
+	        					line = in.readLine();
+	        					System.out.println(line);
 	            			}
 	            			else {//server is down
 	            				out.println(line);
 	            			}
             				    
 	            		}
+	            		sem.release();
                     }
                     else {
+                    	sem.release();
                     	line = "File name does not exist";
 		                System.out.println(line);
 		                out.println(line);	
                     }
-	            	sem.release();
 	            	break;
 	            case 'H':
 	            	line = in.readLine();

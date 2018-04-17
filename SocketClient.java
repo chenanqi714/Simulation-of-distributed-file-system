@@ -2,6 +2,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 import java.net.*;
 
 public class SocketClient
@@ -10,6 +11,7 @@ public class SocketClient
    PrintWriter out = null;
    BufferedReader in = null;
    String[] hostname = new String[5];
+   int numOfCopy;
    
    public void printMenu() {
 	   System.out.println("\nPlease select an option:\n"
@@ -20,7 +22,7 @@ public class SocketClient
 	   		+ "5. Exit\n");
    }
    
-   public void communicate(String host, int Mport, int port)
+   public void communicate(String host, int Mport, int port, int numOfCopy)
    {
       
 	  boolean flag = true;
@@ -169,25 +171,55 @@ public class SocketClient
                    	    	 System.out.println("ChunkIds are: " + line);
                   	    	 String[] chunkId = line.split(",");
                    	    	 
-                  	    	 //send commit request to servers
+                  	    	//send commit request to servers
+                  	    	 ServerStatus status = new ServerStatus(false, false, 0);
+              	    	     Semaphore sem_abort = new Semaphore(1);
+              	    	     Thread t[] = new Thread[numOfCopy];
                   	    	 for(int i = 0; i < serverId.length; ++i) {
                   	    		 SendCommitRequest c;
-                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]));
+                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]), status, sem_abort);
                   		         Thread commit = new Thread(c);
+                  		         t[i] = commit;
                   		         commit.start();
+                  		         
                   	    	 }
-                  	    	
+                  	    	 for(int i = 0; i < serverId.length; ++i) {
+                  	    		try {
+									t[i].join();
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}                  	    	 
+                  	    	 }
                   	    	 
-                  	    	 //append line to the last chunk file 
-                   	    	 for(int i = 0; i < serverId.length; ++i) {
-                           	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
-                           	    out.println(option);
-                           	    out.println(filename);
-                           	    out.println(chunkId[i]);
-                           	    out.println(text);
-                           	    line = in.readLine();
-                           	    System.out.println(line);
-                             }
+                  	    	 //send abort to Mserver and servers
+                  	    	 if(status.abort) {
+                  	    		out.println("Abort");
+                  	    		for(int i = 0; i < serverId.length; ++i) {
+                  	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                               	    out.println("A");
+                  	    		}
+                  	    	 }
+                  	    	 
+                  	    	 //send commit to Mserver and servers
+                  	    	 else {
+                  	    		out.println("Commit");
+                  	    		for(int i = 0; i < serverId.length; ++i) {
+                  	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                               	    out.println("C");
+                  	    		}
+                  	    		
+                  	    		//append line to the last chunk file 
+                   	    	    for(int i = 0; i < serverId.length; ++i) {
+                           	        this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                           	        out.println(option);
+                           	        out.println(filename);
+                           	        out.println(chunkId[i]);
+                           	        out.println(text);
+                           	        line = in.readLine();
+                           	        System.out.println(line);
+                                }
+                  	    	 }
                    	     }
                    	     else if(line.equals("Not enough space")) {
                    	    	 line = in.readLine();
@@ -198,47 +230,82 @@ public class SocketClient
                   	    	 System.out.println("Old ChunkIds are: " + line);
                  	    	 String[] chunkId = line.split(",");
                    	     
-                  	         line = in.readLine();
+                  	         /*line = in.readLine();
                   	         System.out.println("New ServerIds are: " + line);
-               	    	     String[] serverId_new = line.split(",");                	      
-                  	         
-                  	         
+               	    	     String[] serverId_new = line.split(",");  */ 
+               	    	     
+               	    	     
                	    	     //send commit request to servers
+                  	    	 ServerStatus status = new ServerStatus(false, false, 0);
+              	    	     Semaphore sem_abort = new Semaphore(1);
+              	    	     Thread t[] = new Thread[numOfCopy];
                   	    	 for(int i = 0; i < serverId.length; ++i) {
                   	    		 SendCommitRequest c;
-                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]));
+                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]), status, sem_abort);
                   		         Thread commit = new Thread(c);
+                  		         t[i] = commit;
                   		         commit.start();
+                  		         
                   	    	 }
-               	    	     
-               	    	     
-               	    	     //append null character to the last chunk
-               	    	     for(int i = 0; i < serverId.length; ++i) {
-                         	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
-                         	    out.println("0");
-                         	    out.println(filename);
-                         	    out.println(chunkId[i]);
-                             }
-                             
-                             //create a new chunk and append line to it
-               	    	     for(int i = 0; i < serverId.length; ++i) {
-                         	    this.listenSocket(hostname[Integer.parseInt(serverId_new[i])], port);
-                         	    out.println(option);
-                         	    out.println(filename);
-                         	    out.println("-1");
-                         	    out.println(text);
-                         	    line = in.readLine();
-                         	    System.out.println(line);
-                             }                   	     
-                   	     
+                  	    	 for(int i = 0; i < serverId.length; ++i) {
+                  	    		try {
+									t[i].join();
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}                  	    	 
+                  	    	 }
+                  	    	 
+                  	    	 //send abort to Mserver and servers
+                  	    	 if(status.abort) {
+                  	    		out.println("Abort");
+                  	    		for(int i = 0; i < serverId.length; ++i) {
+                  	    			System.out.println("Abort sent to server"+serverId[i]);
+                  	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                               	    out.println("A");
+                  	    		}
+                  	    	 }
+                  	    	 
+                  	    	 //send commit to Mserver and servers
+                  	    	 else {
+                  	    		 out.println("Commit");
+                  	    		 
+                  	    		
+                  	    		 //get new server ids
+                  	    	     line = in.readLine();
+                    	         System.out.println("New ServerIds are: " + line);
+                 	    	     String[] serverId_new = line.split(","); 
+                  	    		 
+                  	    		 for(int i = 0; i < serverId.length; ++i) {
+                  	    			System.out.println("Commit sent to server"+serverId[i]);
+                  	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                               	    out.println("C");
+                  	    		 }
+                  	    		
+                  	    	     //append null character to the last chunk
+                  	    	     for(int i = 0; i < serverId.length; ++i) {
+                            	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
+                            	    out.println("0");
+                            	    out.println(filename);
+                            	    out.println(chunkId[i]);
+                                 }
+                  	    	     
+                  	    	     //create a new chunk and append line to it
+                 	    	     for(int i = 0; i < serverId.length; ++i) {
+                            	    this.listenSocket(hostname[Integer.parseInt(serverId_new[i])], port);
+                            	    out.println(option);
+                            	    out.println(filename);
+                            	    out.println("-1");
+                            	    out.println(text);
+                            	    line = in.readLine();
+                            	    System.out.println(line);
+                                 }        
+                  	    	 }             	                        	     
                    	     }
                    	     else {
                    	         //server is down
                         	 System.out.println(line);
-                   	     }
-                   	     
-                   	                      	     
-                   	     
+                   	     }	     
                      }
                      else {
                     	 //file does not exist
@@ -299,6 +366,7 @@ public class SocketClient
       String host = args[0];
       int Mport = Integer.valueOf(args[1]);
       int port = Integer.valueOf(args[2]);
-      client.communicate(host, Mport, port);
+      int numOfCopy = 3;
+      client.communicate(host, Mport, port, numOfCopy);
    }
 }

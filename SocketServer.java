@@ -12,7 +12,7 @@ public class SocketServer {
 	   MaxChunkId id = new MaxChunkId();
 	   Semaphore sem = new Semaphore(1);
 	   List<Semaphore> sem_files = new ArrayList<Semaphore>();
-	   ServerStatus status = new ServerStatus(false, false);
+	   ServerStatus status = new ServerStatus(false, false, 0);
 
 	   public void listenSocket(String hostname, int Mport, int port, int serverId)
 	   {
@@ -44,7 +44,7 @@ public class SocketServer {
 	         HandleRequestServer w;
 	         try
 	         {
-	            w = new HandleRequestServer(server.accept(), map, serverId, id, sem, sem_files);
+	            w = new HandleRequestServer(server.accept(), map, serverId, id, sem, sem_files, status);
 	            Thread t = new Thread(w);
 	            t.start();
 	         }

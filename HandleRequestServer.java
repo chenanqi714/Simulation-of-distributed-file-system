@@ -22,8 +22,9 @@ class HandleRequestServer implements Runnable
    int serverId;
    Semaphore sem;
    List<Semaphore> sem_files;
+   ServerStatus status;
    
-   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId, MaxChunkId id, Semaphore sem, List<Semaphore> sem_files) 
+   HandleRequestServer(Socket client, HashMap<String, List<ChunkNode>> map, int serverId, MaxChunkId id, Semaphore sem, List<Semaphore> sem_files, ServerStatus status) 
    {
       this.client = client;
       this.map = map;
@@ -32,6 +33,7 @@ class HandleRequestServer implements Runnable
       this.serverId = serverId;
       this.sem = sem;
       this.sem_files = sem_files;
+      this.status = status;
    }
    
    public void printMap() {
@@ -106,7 +108,21 @@ class HandleRequestServer implements Runnable
 	        // Send response back to client
 	        switch(option) {
 	            case 'C':
-	            	System.out.println("Get commit request from client");
+	            	System.out.println("Commit received");
+	            	break;
+	            case 'A':
+	            	System.out.println("Abort received");
+	            	break;
+	            case 'R':
+                    System.out.println("Get commit request from client");
+	            	if(this.status.abort == false) {
+	            		out.println("Agree");
+	            		System.out.println("Agree sent");
+	            	}
+	            	else {
+	            		out.println("Abort");
+	            		System.out.println("Abort sent");
+	            	}
 	            	break;
 	            case '0':
 	            	line = in.readLine();
