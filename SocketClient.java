@@ -169,6 +169,15 @@ public class SocketClient
                    	    	 System.out.println("ChunkIds are: " + line);
                   	    	 String[] chunkId = line.split(",");
                    	    	 
+                  	    	 //send commit request to servers
+                  	    	 for(int i = 0; i < serverId.length; ++i) {
+                  	    		 SendCommitRequest c;
+                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]));
+                  		         Thread commit = new Thread(c);
+                  		         commit.start();
+                  	    	 }
+                  	    	
+                  	    	 
                   	    	 //append line to the last chunk file 
                    	    	 for(int i = 0; i < serverId.length; ++i) {
                            	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
@@ -193,7 +202,17 @@ public class SocketClient
                   	         System.out.println("New ServerIds are: " + line);
                	    	     String[] serverId_new = line.split(",");                	      
                   	         
-                  	         //append null character to the last chunk
+                  	         
+               	    	     //send commit request to servers
+                  	    	 for(int i = 0; i < serverId.length; ++i) {
+                  	    		 SendCommitRequest c;
+                  		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]));
+                  		         Thread commit = new Thread(c);
+                  		         commit.start();
+                  	    	 }
+               	    	     
+               	    	     
+               	    	     //append null character to the last chunk
                	    	     for(int i = 0; i < serverId.length; ++i) {
                          	    this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
                          	    out.println("0");

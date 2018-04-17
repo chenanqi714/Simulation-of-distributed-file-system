@@ -19,6 +19,14 @@ public class ShutdownServer implements Runnable{
 					status.down = false;
 					System.out.println("Server is recovered");
 				}
+				else if(line.equals("abort")) {
+					status.abort = true;
+					System.out.println("Server will abort commit");
+				}
+				else if(line.equals("agree")) {
+					status.abort = false;
+					System.out.println("Server will agree commit");
+				}
 			}
 			else {
 				continue;

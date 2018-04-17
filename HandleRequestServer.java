@@ -105,6 +105,9 @@ class HandleRequestServer implements Runnable
 	        char option = line.charAt(0);
 	        // Send response back to client
 	        switch(option) {
+	            case 'C':
+	            	System.out.println("Get commit request from client");
+	            	break;
 	            case '0':
 	            	line = in.readLine();
 	            	String filename = line;

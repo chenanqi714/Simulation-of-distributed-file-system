@@ -12,7 +12,7 @@ public class SocketServer {
 	   MaxChunkId id = new MaxChunkId();
 	   Semaphore sem = new Semaphore(1);
 	   List<Semaphore> sem_files = new ArrayList<Semaphore>();
-	   ServerStatus status = new ServerStatus(false);
+	   ServerStatus status = new ServerStatus(false, false);
 
 	   public void listenSocket(String hostname, int Mport, int port, int serverId)
 	   {
