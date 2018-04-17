@@ -196,6 +196,7 @@ public class SocketClient
                   	    	 if(status.abort) {
                   	    		out.println("Abort");
                   	    		for(int i = 0; i < serverId.length; ++i) {
+                  	    			System.out.println("Abort sent to server"+serverId[i]);
                   	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
                                	    out.println("A");
                   	    		}
@@ -205,6 +206,7 @@ public class SocketClient
                   	    	 else {
                   	    		out.println("Commit");
                   	    		for(int i = 0; i < serverId.length; ++i) {
+                  	    			System.out.println("Commit sent to server"+serverId[i]);
                   	    			this.listenSocket(hostname[Integer.parseInt(serverId[i])], port);
                                	    out.println("C");
                   	    		}
@@ -228,12 +230,7 @@ public class SocketClient
                   	         
                   	    	 line = in.readLine();
                   	    	 System.out.println("Old ChunkIds are: " + line);
-                 	    	 String[] chunkId = line.split(",");
-                   	     
-                  	         /*line = in.readLine();
-                  	         System.out.println("New ServerIds are: " + line);
-               	    	     String[] serverId_new = line.split(",");  */ 
-               	    	     
+                 	    	 String[] chunkId = line.split(",");                  	
                	    	     
                	    	     //send commit request to servers
                   	    	 ServerStatus status = new ServerStatus(false, false, 0);
