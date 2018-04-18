@@ -16,7 +16,7 @@ public class ShutdownServer implements Runnable{
 					System.out.println("Server is down");
 				}
 				else if(line.equals("recover")) {
-					status.down = false;
+					status.recover = true;
 					System.out.println("Server is recovered");
 				}
 				else if(line.equals("abort")) {

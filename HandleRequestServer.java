@@ -104,6 +104,7 @@ class HandleRequestServer implements Runnable
 		       System.out.println("Invalid option");
 		       System.exit(-1);
 	        }
+	        
 	        char option = line.charAt(0);
 	        // Send response back to client
 	        switch(option) {
@@ -124,11 +125,33 @@ class HandleRequestServer implements Runnable
 	            		System.out.println("Abort sent");
 	            	}
 	            	break;
+	            case 'T':
+	            	System.out.println("Get copy request from server");
+	            	line = in.readLine();
+	            	int chunkId = Integer.parseInt(line);	            	
+	            	
+                    String content = "";
+                    Semaphore sem_file = sem_files.get(chunkId);				
+	            	try {
+					    sem_file.acquire();
+				    } catch (InterruptedException e1) {
+					    e1.printStackTrace();
+				    }
+	            	try (BufferedReader br = new BufferedReader(new FileReader("server"+serverId+"/"+line))) {
+	            		while ((line = br.readLine()) != null) {
+	            		    content += line;
+	            		}
+	            	}
+	            	sem_file.release();
+	            	out.println(content);
+	            	
+	            	
+	            	break;
 	            case '0':
 	            	line = in.readLine();
 	            	String filename = line;
 	            	line = in.readLine();
-	            	int chunkId = Integer.parseInt(line);
+	            	chunkId = Integer.parseInt(line);
 	            	
 	            	try {
 						sem.acquire();
@@ -146,7 +169,7 @@ class HandleRequestServer implements Runnable
 
 	            	Writer output;
 	            			
-	            	Semaphore sem_file = sem_files.get(chunkId);
+	            	sem_file = sem_files.get(chunkId);
 	            	try {
 	    			    sem_file.acquire();
 	    			} catch (InterruptedException e1) {
@@ -189,7 +212,7 @@ class HandleRequestServer implements Runnable
 		            break;
 	            case '3':
 	            	line = in.readLine();
-	            	String content = "";
+	            	content = "";
 	            	
 	            	chunkId = Integer.parseInt(line);
 	            	sem_file = sem_files.get(chunkId);

@@ -39,7 +39,7 @@ class HandleRequestMServer implements Runnable
 		   System.out.print(filename+": \n");
 		   for(ChunkNode[] chunk_ary: list) {
 			   for(ChunkNode n : chunk_ary) {
-				   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space);
+				   System.out.println("       serverId "+n.serverId+" chunkId "+n.chunkId+" space "+n.space+ " outofdate "+n.outofdate);
 			   }
 			   System.out.println();
 		   }
@@ -234,6 +234,7 @@ class HandleRequestMServer implements Runnable
 	            			ChunkNode[] chunk_ary = list.get(list.size() - 1);
 	            			StringBuilder builder_serverId = new StringBuilder();
 	            			StringBuilder builder_chunkId = new StringBuilder();
+	            			List<ChunkNode> down_list = new ArrayList<ChunkNode>();
 	            			for(int i = 0; i < numOfCopy; ++i) {
 	            				try {
             					    sem_time.acquire();
@@ -243,27 +244,19 @@ class HandleRequestMServer implements Runnable
             	            	long interval = System.currentTimeMillis() - times[chunk_ary[i].serverId];
             				    sem_time.release();
             				    if(interval > max_interval && chunk_ary[i].space != 0) {
-            				    	line = "Server"+chunk_ary[i].serverId+" is down, cannot write to chunk file";
-            				    	break;
+            				    	down_list.add(chunk_ary[i]);
+            				    	//chunk_ary[i].outofdate = true;
             				    }
             				    else {
             				    	if(chunk_ary[i].space >= bytes && chunk_ary[i].chunkId != -1) {
-            				    		if(i == 0) {
-            				    			line = "Enough space";
-            				    		}
+            				    		line = "Enough space";
             				    		builder_serverId.append(chunk_ary[i].serverId+",");
             				    		builder_chunkId.append(chunk_ary[i].chunkId+",");
     	            				}
-    	            				else if(chunk_ary[i].space < bytes && chunk_ary[i].chunkId != -1){   	            					
-    	            					//chunk_ary[i].space = 0;
-    	            				    
-    	            				    if(i == 0) {
-    	            				    	line = "Not enough space";
-                				        }
+    	            				else if(chunk_ary[i].space < bytes && chunk_ary[i].chunkId != -1){   	            					   	            				    
+    	            				    line = "Not enough space";
     	            				    builder_serverId.append(chunk_ary[i].serverId+",");
         	            				builder_chunkId.append(chunk_ary[i].chunkId+",");
-    	            					
-    	                            	
     	            				}
     	            				else {
     	            					line = "Mapping has not been updated, cannot write to chunk file";
@@ -273,6 +266,10 @@ class HandleRequestMServer implements Runnable
             				    }
 	            				
 	            			}
+	            			if(down_list.size() == numOfCopy) {
+	            				line = "All three copies are unavailable";
+	            			}
+
 	            			if(line.equals("Not enough space")) {
 	            				List<Integer> serverIds = new ArrayList<Integer>();
 	                        	try {
@@ -298,6 +295,22 @@ class HandleRequestMServer implements Runnable
 		        					out.println(builder_chunkId.toString()); 
 		        					line = in.readLine();
 		        					if(line.equals("Commit")) {
+		        						
+		        						for(ChunkNode n: down_list) {
+			            					n.outofdate = true;
+			            				}
+		        						
+		        						String[] serverIds_old = builder_serverId.toString().split(",");
+		        						String[] chunkIds_old = builder_chunkId.toString().split(",");
+		        						for(int i = 0; i < serverIds_old.length; ++i) {
+		        							for(ChunkNode n: chunk_ary) {
+		        								if(n.serverId == Integer.parseInt(serverIds_old[i]) && n.chunkId ==  Integer.parseInt(chunkIds_old[i])) {
+		        									n.space = 0;
+		        									break;
+		        								}
+		        							}
+		        						}
+		        						
 		        						StringBuilder builder_serverId_new = new StringBuilder();
 	        				    	    ChunkNode[] chunk_ary_new = new ChunkNode[numOfCopy];
 	        				    	    Collections.shuffle(serverIds);
@@ -318,7 +331,14 @@ class HandleRequestMServer implements Runnable
 	            				out.println(line);
 		            			out.println(builder_serverId.toString());
 	        					out.println(builder_chunkId.toString());   
+	        					
 	        					line = in.readLine();
+	        					
+                                if(line.equals("Commit")) {	        						
+	        						for(ChunkNode n: down_list) {
+		            					n.outofdate = true;
+		            				}
+	        					}
 	        					System.out.println(line);
 	            			}
 	            			else {//server is down
@@ -339,14 +359,7 @@ class HandleRequestMServer implements Runnable
 	            	line = in.readLine();
 	            	int serverId = Integer.parseInt(line);
 	            	System.out.println("Get heart beat message from server"+serverId);
-	            	try {
-					    sem_time.acquire();
-				    } catch (InterruptedException e1) {
-					    e1.printStackTrace();
-				    }
-	            	times[serverId] = System.currentTimeMillis();
-	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
-				    sem_time.release();
+
 	            	boolean end = false;
 	            	while(!end) {
 	            		line = in.readLine();
@@ -391,7 +404,96 @@ class HandleRequestMServer implements Runnable
 					}
 	            	printMap();
 	            	sem.release();
+	            	try {
+					    sem_time.acquire();
+				    } catch (InterruptedException e1) {
+					    e1.printStackTrace();
+				    }
+	            	times[serverId] = System.currentTimeMillis();
+	            	System.out.println("Server" + serverId+ " last updated: "+times[serverId]);
+				    sem_time.release();
 	            	System.out.println("End of heart beat message");
+	            	break;
+	            case 'R':
+	            	line = in.readLine();
+	            	serverId = Integer.parseInt(line);
+	            	System.out.println("Get recovery message from server"+serverId);
+	            	StringBuilder builder_chunkid_outdate = new StringBuilder();
+	            	StringBuilder builder_serverid_recover = new StringBuilder();
+	            	StringBuilder builder_chunkid_recover = new StringBuilder();
+	            	HashMap<Integer, ChunkNode> recover_map = new HashMap<Integer, ChunkNode>();
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+	            	for(String fname: map.keySet()) {
+	            		List<ChunkNode[]> list = map.get(fname);
+        			    for(ChunkNode[] chunk_ary: list) {
+        			       int chunkid = -1;
+        				   for(ChunkNode node: chunk_ary) {
+        					  if(node.serverId == serverId && node.outofdate == true) {
+        					     chunkid = node.chunkId;
+        					     break;
+        				      }
+        				   }
+        				   if(chunkid != -1) {
+        					   for(ChunkNode node: chunk_ary) {
+             					  if(node.serverId != serverId && node.outofdate == false) {
+             						 recover_map.put(chunkid, node);
+             					     break;
+             				      }
+             				   }
+        				   }
+        			    }
+	            	}        				            			
+        			sem.release();
+	            	for(int chunkid: recover_map.keySet()) {
+	            		builder_chunkid_outdate.append(chunkid+",");
+	            		builder_serverid_recover.append(recover_map.get(chunkid).serverId+",");
+	            		builder_chunkid_recover.append(recover_map.get(chunkid).chunkId+",");
+	            	}
+	            	out.println(builder_chunkid_outdate.toString());
+	            	out.println(builder_serverid_recover.toString());
+	            	out.println(builder_chunkid_recover.toString());
+	            	
+	            	break;
+	            case 'F':
+	            	line = in.readLine();
+	            	serverId = Integer.parseInt(line);
+	            	System.out.println("Server"+serverId+" recovery finished");
+	            	
+	            	try {
+						sem.acquire();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+	            	for(String fname: map.keySet()) {
+	            		List<ChunkNode[]> list = map.get(fname);
+        			    for(ChunkNode[] chunk_ary: list) {
+        			       ChunkNode temp = null;
+        				   //set outofdate flag to false after chunk file is recovered
+        			       for(ChunkNode node: chunk_ary) {
+        					  if(node.serverId == serverId && node.outofdate == true) {
+        					     node.outofdate = false;
+        					     temp = node;
+        					     break;
+        				      }
+        				   }
+        				   //update space after chunk file is recovered
+        				   if(temp != null) {
+        					   for(ChunkNode node: chunk_ary) {
+             					  if(node.serverId != serverId && node.outofdate == false) {             					     
+             					     temp.space = node.space;
+             					     break;
+             				      }
+             				   }
+        				   }
+        			    }
+	            	}        				            			
+        			sem.release();
+	            	
+	            	
 	            	break;
                 default:
             	    line = "Invalid option";

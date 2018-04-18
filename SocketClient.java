@@ -172,9 +172,9 @@ public class SocketClient
                   	    	 String[] chunkId = line.split(",");
                    	    	 
                   	    	//send commit request to servers
-                  	    	 ServerStatus status = new ServerStatus(false, false, 0);
+                  	    	 ServerStatus status = new ServerStatus(false, false, false, 0);
               	    	     Semaphore sem_abort = new Semaphore(1);
-              	    	     Thread t[] = new Thread[numOfCopy];
+              	    	     Thread t[] = new Thread[serverId.length];
                   	    	 for(int i = 0; i < serverId.length; ++i) {
                   	    		 SendCommitRequest c;
                   		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]), status, sem_abort);
@@ -233,9 +233,9 @@ public class SocketClient
                  	    	 String[] chunkId = line.split(",");                  	
                	    	     
                	    	     //send commit request to servers
-                  	    	 ServerStatus status = new ServerStatus(false, false, 0);
+                  	    	 ServerStatus status = new ServerStatus(false, false, false, 0);
               	    	     Semaphore sem_abort = new Semaphore(1);
-              	    	     Thread t[] = new Thread[numOfCopy];
+              	    	     Thread t[] = new Thread[serverId.length];
                   	    	 for(int i = 0; i < serverId.length; ++i) {
                   	    		 SendCommitRequest c;
                   		         c = new SendCommitRequest(hostname[Integer.parseInt(serverId[i])], port, Integer.parseInt(serverId[i]), status, sem_abort);
@@ -288,7 +288,7 @@ public class SocketClient
                                  }
                   	    	     
                   	    	     //create a new chunk and append line to it
-                 	    	     for(int i = 0; i < serverId.length; ++i) {
+                 	    	     for(int i = 0; i < serverId_new.length; ++i) {
                             	    this.listenSocket(hostname[Integer.parseInt(serverId_new[i])], port);
                             	    out.println(option);
                             	    out.println(filename);
