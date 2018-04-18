@@ -111,57 +111,66 @@ public class sendRecoverMessage implements Runnable {
 				   System.out.println("Send recover messasge");
 
 	               try {
-					   String chunkid_outdate = in.readLine();
-					   String serverid_recover = in.readLine();
-		               String chunkid_recover = in.readLine();
-		               String[] chunkid_outdate_ary = chunkid_outdate.split(",");
-		               String[] serverid_recover_ary = serverid_recover.split(",");
-		               String[] chunkid_recover_ary = chunkid_recover.split(",");
-		               if(chunkid_outdate.isEmpty()) {
-		            	   listenSocket(host, Mport);
-		            	   out.println("F");
-						   out.println(serverId);
-						   System.out.println("Recovery finished");
-		            	   status.recover = false;
-		            	   status.down = false;
-		            	   continue;
-		               }
-		               else {
-		            	   // copy chunk file from other servers
-		            	   for(int i = 0; i < chunkid_outdate_ary.length; ++i) {
-		            		   int serverid = Integer.parseInt(serverid_recover_ary[i]);
-		            		   listenSocket(hostnames[serverid], port);
-		            		   out.println("T");
-		            		   out.println(chunkid_recover_ary[i]);
-		            		   String text = in.readLine();
-		            		   createFileUseJavaIO("server"+serverId+"/"+chunkid_outdate_ary[i]);
-		            		   Writer output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkid_outdate_ary[i], true));  //clears file every time
-		            		   output.append(text);
-		            		   output.close();
-		            		   //update space in hashmap
-		            		   boolean found = false;
-		            		   for(String filename: map.keySet()) {
-		            			   for(ChunkNode n: map.get(filename)) {
-		            				   if(n.chunkId == Integer.parseInt(chunkid_outdate_ary[i])) {
-		            					   int bytes = text.getBytes("UTF-8").length;
-		            					   ChunkNode newNode = new ChunkNode(-1, -1);
-		            					   n.space = newNode.space - bytes;
-		            					   found = true;
-		            					   break;
-		            				   }
-		            			   }
-		            			   if(found) {
-		            				   break;
-		            			   }
-		            		   }
-		            	   }
-		            	   listenSocket(host, Mport);
-		            	   out.println("F");
-						   out.println(serverId);
-						   System.out.println("Recovery finished");
-						   status.recover = false;
-						   status.down = false;
-		               }
+	            	   String line = in.readLine();
+	            	   if(line.equals("success")) {
+	            		   String chunkid_outdate = in.readLine();
+						   String serverid_recover = in.readLine();
+			               String chunkid_recover = in.readLine();
+			               String[] chunkid_outdate_ary = chunkid_outdate.split(",");
+			               String[] serverid_recover_ary = serverid_recover.split(",");
+			               String[] chunkid_recover_ary = chunkid_recover.split(",");
+			               if(chunkid_outdate.isEmpty()) {
+			            	   listenSocket(host, Mport);
+			            	   out.println("F");
+							   out.println(serverId);
+							   System.out.println("Recovery finished");
+			            	   status.recover = false;
+			            	   status.down = false;
+			            	   continue;
+			               }
+			               else {
+			            	   // copy chunk file from other servers
+			            	   for(int i = 0; i < chunkid_outdate_ary.length; ++i) {
+			            		   int serverid = Integer.parseInt(serverid_recover_ary[i]);
+			            		   listenSocket(hostnames[serverid], port);
+			            		   out.println("T");
+			            		   out.println(chunkid_recover_ary[i]);
+			            		   String text = in.readLine();
+			            		   createFileUseJavaIO("server"+serverId+"/"+chunkid_outdate_ary[i]);
+			            		   Writer output = new BufferedWriter(new FileWriter("server"+serverId+"/"+chunkid_outdate_ary[i], true));  //clears file every time
+			            		   output.append(text);
+			            		   output.close();
+			            		   //update space in hashmap
+			            		   boolean found = false;
+			            		   for(String filename: map.keySet()) {
+			            			   for(ChunkNode n: map.get(filename)) {
+			            				   if(n.chunkId == Integer.parseInt(chunkid_outdate_ary[i])) {
+			            					   int bytes = text.getBytes("UTF-8").length;
+			            					   ChunkNode newNode = new ChunkNode(-1, -1);
+			            					   n.space = newNode.space - bytes;
+			            					   found = true;
+			            					   break;
+			            				   }
+			            			   }
+			            			   if(found) {
+			            				   break;
+			            			   }
+			            		   }
+			            	   }
+			            	   listenSocket(host, Mport);
+			            	   out.println("F");
+							   out.println(serverId);
+							   System.out.println("Recovery finished");
+							   status.recover = false;
+							   status.down = false;
+			               }
+	            		   
+	            		   
+	            	   }
+	            	   else {
+	            		   System.out.println("Recovery failed. Cannot copy the missing appends from other servers.");
+	            	   }
+					   
 		            
 				    } catch (IOException e) {
 					   // TODO Auto-generated catch block

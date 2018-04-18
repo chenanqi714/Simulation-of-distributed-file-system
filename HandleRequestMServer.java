@@ -431,15 +431,25 @@ class HandleRequestMServer implements Runnable
 	            		List<ChunkNode[]> list = map.get(fname);
         			    for(ChunkNode[] chunk_ary: list) {
         			       int chunkid = -1;
-        				   for(ChunkNode node: chunk_ary) {
-        					  if(node.serverId == serverId && node.outofdate == true) {
+        				   for(ChunkNode node: chunk_ary) { 					  
+        					  if(node.serverId == serverId && node.outofdate == true ) {
         					     chunkid = node.chunkId;
+        					     recover_map.put(chunkid, null);
         					     break;
         				      }
         				   }
         				   if(chunkid != -1) {
         					   for(ChunkNode node: chunk_ary) {
-             					  if(node.serverId != serverId && node.outofdate == false) {
+        						  
+        						  try {
+                  					    sem_time.acquire();
+                  				  } catch (InterruptedException e1) {
+                  					    e1.printStackTrace();
+                  				  }
+                  	              long interval = System.currentTimeMillis() - times[node.serverId];
+                  				  sem_time.release();
+        						  
+             					  if(node.serverId != serverId && node.outofdate == false && interval < max_interval) {
              						 recover_map.put(chunkid, node);
              					     break;
              				      }
@@ -448,14 +458,28 @@ class HandleRequestMServer implements Runnable
         			    }
 	            	}        				            			
         			sem.release();
+        			boolean success = true;
 	            	for(int chunkid: recover_map.keySet()) {
-	            		builder_chunkid_outdate.append(chunkid+",");
-	            		builder_serverid_recover.append(recover_map.get(chunkid).serverId+",");
-	            		builder_chunkid_recover.append(recover_map.get(chunkid).chunkId+",");
+	            		if(recover_map.get(chunkid) != null) {
+	            			builder_chunkid_outdate.append(chunkid+",");
+	            		    builder_serverid_recover.append(recover_map.get(chunkid).serverId+",");
+	            		    builder_chunkid_recover.append(recover_map.get(chunkid).chunkId+",");
+	            		}
+	            		else {
+	            			success = false;
+	            			break;
+	            		}
+	            		
 	            	}
-	            	out.println(builder_chunkid_outdate.toString());
-	            	out.println(builder_serverid_recover.toString());
-	            	out.println(builder_chunkid_recover.toString());
+	            	if(success) {
+	            		out.println("success");
+	            		out.println(builder_chunkid_outdate.toString());
+	            	    out.println(builder_serverid_recover.toString());
+	            	    out.println(builder_chunkid_recover.toString());
+	            	}
+	            	else {
+	            		out.println("fail");
+	            	}           	
 	            	
 	            	break;
 	            case 'F':
