@@ -20,6 +20,7 @@ class HandleRequestMServer implements Runnable
    Semaphore sem_time;
    int max_interval;
    int numOfCopy;
+   int chunksize = 8192;
    
    HandleRequestMServer(Socket client, HashMap<String, List<ChunkNode[]>> map, Semaphore sem, int numOfServer, long[] times, Semaphore sem_time, int max_interval, int numOfCopy) 
    {
@@ -151,14 +152,16 @@ class HandleRequestMServer implements Runnable
 		            break;
 	            case '3':
 	            	line = in.readLine();
-	            	String filename = line;
+	            	String[] s = line.split(",");
+	            	String filename = s[0];
+	            	int offset = Integer.parseInt(s[1]);
 	            	
 	            	try {
 						sem.acquire();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-	            	if(map.containsKey(line)) {
+	            	if(map.containsKey(filename)) {
 	            		line = "File exists";
 	            		//out.println(line);
 	            		List<ChunkNode[]> list = map.get(filename);
@@ -189,13 +192,22 @@ class HandleRequestMServer implements Runnable
 	            			}
 	            				
 	            		    out.println(line);
-	            				
+	            		    
+	            		    int i = 0;
 	            		    if(line.equals("File exists")){
+		            		    int index = offset / chunksize;
+		            		    int start = offset % chunksize;
+		            		    System.out.println("Offset is"+offset);
+		            		    
 	            				for(ChunkNode n: list_selected) {
-		            				out.println(n.chunkId);
-		            				out.println(n.serverId);
+	            					if(i >= index) {
+	            						out.println(n.chunkId);
+			            				out.println(n.serverId);
+	            					}
+	            					++i;
 		            			}
 		            			out.println("E");
+		            			out.println(start);
 	            			}
 	            		}
 	            		

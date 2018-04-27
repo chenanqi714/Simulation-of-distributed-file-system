@@ -89,11 +89,25 @@ public class SocketClient
               case '3':
             	  //Send read file option over socket
             	  out.println(option);
+            	  StringBuilder builder = new StringBuilder();
             	  System.out.println("Enter the file name you want to read:");
             	  line = sc.nextLine();
             	  String filename = line;
-            	  //Send filename over socket
-            	  out.println(line);
+            	  builder.append(filename);
+            	  builder.append(",");
+            	  System.out.println("Please enter offset:");
+            	  line = sc.nextLine();    
+            	  int offset = 0;
+             	  if(Integer.parseInt(line) >= 0) {
+             		 offset = Integer.parseInt(line);
+             		 builder.append(offset);
+             	  }
+             	  else {
+             		 System.out.println("Invalid offset");
+             		 break;
+             	  }
+            	  //Send filename and offset over socket
+            	  out.println(builder.toString());
             	  //Receive text from server
                   try
                   {
@@ -115,15 +129,28 @@ public class SocketClient
      	            			list.add(n);
      	            		}
                     	 }
+                    	 line = in.readLine();
+                    	 int start = Integer.parseInt(line);
                     	 
+                    	 int i = 0;
                     	 for(ChunkNode n: list) {
                     		 this.listenSocket(hostname[n.serverId], port);
                     		 out.println(option);
                     		 out.println(String.valueOf(n.chunkId));
                     		 line = in.readLine();
+                    		 Reader inputString = new StringReader(line);
+                    		 BufferedReader stringReader = new BufferedReader(inputString);
+                    		 int c;
+                    		 builder = new StringBuilder();
+                    		 while((c = stringReader.read()) != -1) {
+                    			 if(i >= start) {
+                    				 builder.append((char)c);
+                    			 }
+                    			 ++i;
+                    		 }
                     		 
                     		 System.out.println("Read from server"+n.serverId+ " chunkfile"+n.chunkId);
-                    		 System.out.println(line);
+                    		 System.out.println(builder.toString());
                     	 }
                     	 
                      }
